@@ -1,7 +1,7 @@
 Name
 ====
 
-lua-resty-jwt - [JsonWebToken](http://self-issued.info/docs/draft-jones-json-web-token-01.html) for ngx_lua and LuaJIT
+lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01.html) for ngx_lua and LuaJIT
 
 Table of Contents
 =================
@@ -92,10 +92,10 @@ sign
 ----
 
 `syntax: local jwt_token = jwt:sign(key, table_of_jwt)`
-sign a table_of_jwt to a jwt_token
-supported hash alg:
-    - HS256
-    - HS512
+
+sign a table_of_jwt to a jwt_token.
+
+The `alg` argument specifies which hashing algorithm to use (`HS256`, `HS512`).
 
 ### sample of table_of_jwt ###
 ```
@@ -123,12 +123,6 @@ verify a jwt_token and returns a jwt_obj table
     "reason": "signature mismatche: wrong-signature"
 }
 ```
-
-The `key` argument specifies the key to use when calculating the message authentication code (MAC).
-`key` is a lua string which may contain printable characters or binary data.
-
-The `hash_algorithm` argument specifies which hashing algorithm to use (`hash.ALGOS.MD5`, `hash.ALGOS.SHA1`, `hash.ALGOS.SHA256`, `hash.ALGOS.SHA512`).
-The default value is `hash.ALGOS.MD5`.
 
 [Back to TOC](#table-of-contents)
 
