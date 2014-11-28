@@ -1,4 +1,4 @@
-OPENRESTY_PREFIX=/usr/bin/openresty
+OPENRESTY_PREFIX=/usr/local/openresty
 
 PREFIX ?=          /usr/local
 LUA_INCLUDE_DIR ?= $(PREFIX)/include
