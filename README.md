@@ -43,19 +43,19 @@ Synopsis
         default_type text/plain;
         location = /verify {
             content_by_lua '
-                local cjson = require "json"
+                local cjson = require "cjson"
                 local jwt = require "resty.jwt"
 
                 local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                    ".eyJmb28iOiJiYXIifQ." ..
-                    "VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY"
-                local jwt_obj = jwt:verify(jwt_token)
+                    ".eyJmb28iOiJiYXIifQ" ..
+                    ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY"
+                local jwt_obj = jwt:verify("lua-resty-jwt", jwt_token)
                 ngx.say(cjson.encode(jwt_obj))
             ';
         }
         location = /sign {
             content_by_lua '
-                local cjson = require "json"
+                local cjson = require "cjson"
                 local jwt = require "resty.jwt"
 
                 local jwt_token = jwt:sign(
