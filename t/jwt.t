@@ -366,3 +366,34 @@ true
 everything is awesome~ :p
 --- no_error_log
 [error]
+
+
+=== TEST 14: JWT sign and verify
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local jwt_token = jwt:sign(
+                "lua-resty-jwt",
+                {
+                    header={typ="JWT",alg="HS256"},
+                    payload={foo="bar"}
+                }
+            )
+
+            local jwt_obj = jwt:verify("lua-resty-jwt", jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["foo"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+bar
+--- no_error_log
+[error]

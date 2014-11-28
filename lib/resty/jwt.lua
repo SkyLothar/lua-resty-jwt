@@ -12,7 +12,7 @@ local function get_raw_part(part_name, jwt_obj)
         if part == nil then
             error({reason="missing part " .. part_name})
         end
-        raw_part = _M.jwt_encode(jwt_obj["payload"])
+        raw_part = _M:jwt_encode(part)
     end
     return raw_part
 end
