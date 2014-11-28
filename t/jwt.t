@@ -368,7 +368,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 14: JWT sign and verify
+=== TEST 15: JWT sign and verify
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
