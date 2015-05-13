@@ -2,6 +2,7 @@ local cjson = require "cjson"
 local hmac = require "resty.hmac"
 
 local _M = {_VERSION="0.1.0"}
+local evp = require "resty.evp"
 local mt = {__index=_M}
 
 
@@ -68,6 +69,24 @@ function _M.jwt_decode(self, b64_str, json_decode)
     return data
 end
 
+--- Initialize the trusted certs
+-- During RS256 verify, we'll make sure the
+-- cert was signed by one of these
+function _M.set_trusted_certs_file(self, filename)
+    self.trusted_certs_file = filename
+end
+_M.trusted_certs_file = nil
+
+--- Set a whitelist of allowed algorithms
+-- E.g., jwt:set_alg_whitelist({RS256=1,HS256=1})
+--
+-- @param algorithms - A table with keys for the supported algorithms
+--                     If the table is non-nil, during
+--                     verify, the alg must be in the table
+function _M.set_alg_whitelist(self, algorithms)
+    self.alg_whitelist = algorithms
+end
+_M.alg_whitelist = nil
 
 function _M.sign(self, secret_key, jwt_obj)
     -- header typ check
@@ -75,26 +94,31 @@ function _M.sign(self, secret_key, jwt_obj)
     if typ ~= "JWT" then
         error({reason="invalid typ: " .. typ})
     end
-    -- header alg check
-    local alg = jwt_obj["header"]["alg"]
-    local hash_alg = nil
-    if alg == "HS256" then
-        hash_alg = hmac.ALGOS.SHA256
-    elseif alg == "HS512" then
-        hash_alg = hmac.ALGOS.SHA512
-    else
-        error({reason="unsupported alg: " .. alg})
-    end
+
     -- assemble jwt parts
     local raw_header = get_raw_part("header", jwt_obj)
     local raw_payload = get_raw_part("payload", jwt_obj)
 
     local message =raw_header ..  "." ..  raw_payload
-    -- cal signature
-    local hmac_func = hmac:new(secret_key, hash_alg)
-    local signature = _M:jwt_encode(hmac_func:final(message))
+
+    -- header alg check
+    local alg = jwt_obj["header"]["alg"]
+    local signature = ""
+    if alg == "HS256" then
+        signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(message)
+    elseif alg == "HS512" then
+        signature = hmac:new(secret_key, hmac.ALGOS.SHA512):final(message)
+    elseif alg == "RS256" then
+        local signer, err = evp.RSASigner:new(secret_key)
+        if not signer then
+            error({reason="signer error: " .. err})
+        end
+        signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
+    else
+        error({reason="unsupported alg: " .. alg})
+    end
     -- return full jwt string
-    return message .. "." .. signature
+    return message .. "." .. _M:jwt_encode(signature)
 end
 
 
@@ -116,21 +140,86 @@ end
 
 
 function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
-    local jwt_str = jwt_obj.raw_header .. 
+    local jwt_str = jwt_obj.raw_header ..
         "." .. jwt_obj.raw_payload ..
         "." .. jwt_obj.signature
 
     if not jwt_obj.valid then
         return jwt_obj
     end
-    local success, ret = pcall(_M.sign, self, secret, jwt_obj)
-    if not success then
-        -- syntax check
-        jwt_obj["reason"] = ret["reason"] or "internal error"
-    elseif jwt_str ~= ret then
-        -- signature check
-        jwt_obj["reason"] = "signature mismatch: " .. jwt_obj["signature"]
-    elseif leeway ~= nil then
+    local alg = jwt_obj["header"]["alg"]
+    if self.alg_whitelist ~= nil then
+        if self.alg_whitelist[alg] == nil then
+            return {verified=false, reason="whitelist unsupported alg: " .. alg}
+        end
+    end
+    if alg == "HS256" or alg == "HS512" then
+        local success, ret = pcall(_M.sign, self, secret, jwt_obj)
+        if not success then
+            -- syntax check
+            jwt_obj["reason"] = ret["reason"] or "internal error"
+        elseif jwt_str ~= ret then
+            -- signature check
+            jwt_obj["reason"] = "signature mismatch: " .. jwt_obj["signature"]
+        end
+    elseif alg == "RS256" then
+        local x5c = jwt_obj['header']['x5c']
+        if not x5c or not x5c[1] then
+            jwt_obj["reason"] = "Unsupported RS256 key model"
+            return jwt_obj
+            -- TODO - Implement jwk and kid based models...
+        end
+
+        -- TODO Might want to add support for intermediaries that we
+        -- don't have in our trusted chain (items 2... if present)
+        local cert_str = ngx.decode_base64(x5c[1])
+        if not cert_str then
+            jwt_obj["reason"] = "Malformed x5c header"
+            return jwt_obj
+        end
+        local cert, err = evp.Cert:new(cert_str)
+        if not cert then
+            jwt_obj["reason"] = "Unable to extract signing cert from JWT: " .. err
+            return jwt_obj
+        end
+        -- Try validating against trusted CA's, then a cert passed as secret
+        if self.trusted_certs_file ~= nil then
+            local trusted, err = cert:verify_trust(self.trusted_certs_file)
+            if not trusted then
+                jwt_obj["reason"] = "Cert used to sign the JWT isn't trusted: " .. err
+                return jwt_obj
+            end
+        elseif secret ~= nil then
+            cert, err = evp.Cert:new(secret)
+            if not cert then
+                jwt_obj["reason"] = "Decode secret is not a valid cert: " .. err
+                return jwt_obj
+            end
+        else
+            jwt_obj["reason"] = "No trusted certs loaded"
+            return jwt_obj
+        end
+        local verifier, err = evp.RSAVerifier:new(cert)
+        if not verifier then
+            -- Internal error case, should not happen...
+            jwt_obj["reason"] = "Failed to build verifier " .. err
+            return jwt_obj
+        end
+
+        -- assemble jwt parts
+        local raw_header = get_raw_part("header", jwt_obj)
+        local raw_payload = get_raw_part("payload", jwt_obj)
+
+        local message =raw_header ..  "." ..  raw_payload
+        local sig = jwt_obj["signature"]:gsub("-", "+"):gsub("_", "/")
+        local verified, err = verifier:verify(message, _M:jwt_decode(sig, false), evp.CONST.SHA256_DIGEST)
+        if not verified then
+            jwt_obj["reason"] = err
+        end
+    else
+        jwt_obj["reason"] = "Unsupported algorithm " .. alg
+    end
+    if leeway ~= nil and not jwt_obj["reason"] then
         local exp = jwt_obj["payload"]["exp"]
         local nbf = jwt_obj["payload"]["nbf"]
         local now = ngx.now()
@@ -144,7 +233,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
         end
     end
 
-    if jwt_obj["reason"] == nil then
+    if not jwt_obj["reason"] then
         jwt_obj["verified"] = true
         jwt_obj["reason"] = "everything is awesome~ :p"
     end
