@@ -120,8 +120,10 @@ verify a jwt_token and returns a jwt_obj table
 
 load & verify
 ----------------------------------------
-`syntax: local jwt_obj = jwt:load_jwt(jwt_token)`
-`syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, leeway])`
+```
+syntax: local jwt_obj = jwt:load_jwt(jwt_token)
+syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, leeway])
+```
 
 
 __verify = load_jwt +  verify_jwt_obj__
