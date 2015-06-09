@@ -1,7 +1,7 @@
 local cjson = require "cjson"
 local hmac = require "resty.hmac"
 
-local _M = {_VERSION="0.0.1"}
+local _M = {_VERSION="0.1.0"}
 local mt = {__index=_M}
 
 
@@ -18,17 +18,27 @@ local function get_raw_part(part_name, jwt_obj)
 end
 
 
-local function parse(token_str, secret, issuer)
+local function parse(token_str)
     local basic_jwt = {}
     local raw_header, raw_payload, signature = string.match(
         token_str,
         '([^%.]+)%.([^%.]+)%.([^%.]+)'
     )
+    local header = _M:jwt_decode(raw_header, true)
+    if not header then
+        error({reason="invalid header: " .. raw_header})
+    end
+
+    local payload = _M:jwt_decode(raw_payload, true)
+    if not payload then
+        error({reason="invalid payload: " .. raw_payload})
+    end
+
     local basic_jwt = {
         raw_header=raw_header,
         raw_payload=raw_payload,
-        header=_M:jwt_decode(raw_header, true),
-        payload=_M:jwt_decode(raw_payload, true),
+        header=header,
+        payload=payload,
         signature=signature
     }
     return basic_jwt
@@ -49,6 +59,9 @@ function _M.jwt_decode(self, b64_str, json_decode)
         b64_str = b64_str .. string.rep("=", 4 - reminder)
     end
     local data = ngx.decode_base64(b64_str)
+    if not data then
+        return nil
+    end
     if json_decode then
         data = cjson.decode(data)
     end
@@ -85,15 +98,28 @@ function _M.sign(self, secret_key, jwt_obj)
 end
 
 
-function _M.verify(self, secret, jwt_str, leeway)
+function _M.load_jwt(self, jwt_str)
     local success, ret = pcall(parse, jwt_str)
-    local jwt_obj = ret
     if not success then
-        return {verified=false, reason=ret["reason"] or "invalid jwt string"}
+        return {valid=false, verified=false, reason=ret["reason"] or "invalid jwt string"}
     end
 
+    local jwt_obj = ret
     jwt_obj["verified"] = false
-    local success, ret = pcall(_M.sign, nil, secret, jwt_obj)
+    jwt_obj["valid"] = true
+    return jwt_obj
+end
+
+
+function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
+    local jwt_str = jwt_obj.raw_header .. 
+        "." .. jwt_obj.raw_payload ..
+        "." .. jwt_obj.signature
+
+    if not jwt_obj.valid then
+        return jwt_obj
+    end
+    local success, ret = pcall(_M.sign, self, secret, jwt_obj)
     if not success then
         -- syntax check
         jwt_obj["reason"] = ret["reason"] or "internal error"
@@ -117,6 +143,16 @@ function _M.verify(self, secret, jwt_str, leeway)
         jwt_obj["reason"] = "everything is awesome~ :p"
     end
     return jwt_obj
+end
+
+
+function _M.verify(self, secret, jwt_str, leeway)
+    jwt_obj = _M.load_jwt(self, jwt_str)
+    if not jwt_obj.valid then
+         return {verified=false, reason=jwt_obj["reason"]}
+    end
+
+    return _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
 end
 
 return _M

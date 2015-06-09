@@ -15,83 +15,7 @@ run_tests();
 __DATA__
 
 
-=== TEST 1: JWT table encode
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            ngx.say(
-                "urlsafe b64encoded {foo: bar}: ",
-                jwt:jwt_encode({foo="bar"})
-            )
-        ';
-    }
---- request
-GET /t
---- response_body
-urlsafe b64encoded {foo: bar}: eyJmb28iOiJiYXIifQ2
---- no_error_log
-[error]
-
-
-=== TEST 2: JWT str encode
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            ngx.say(
-                "urlsafe b64encoded {foo: bar}: ",
-                jwt:jwt_encode("{\\"foo\\":\\"bar\\"}")
-            )
-        ';
-    }
---- request
-GET /t
---- response_body
-urlsafe b64encoded {foo: bar}: eyJmb28iOiJiYXIifQ2
---- no_error_log
-[error]
-
-
-=== TEST 3: JWT table decode
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local decoded = jwt:jwt_decode("eyJmb28iOiJiYXIifQ", true)
-            ngx.say("table eyJmb28iOiJiYXIifQ2: foo=", decoded["foo"])
-        ';
-    }
---- request
-GET /t
---- response_body
-table eyJmb28iOiJiYXIifQ2: foo=bar
---- no_error_log
-[error]
-
-
-=== TEST 4: JWT str decode
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local decoded = jwt:jwt_decode("eyJmb28iOiJiYXIifQ")
-            ngx.say("table eyJmb28iOiJiYXIifQ2: ", decoded)
-        ';
-    }
---- request
-GET /t
---- response_body
-table eyJmb28iOiJiYXIifQ2: {"foo":"bar"}
---- no_error_log
-[error]
-
-
-=== TEST 5: JWT sign HS256
+=== TEST 1: JWT sign HS256
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -116,7 +40,7 @@ eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmb28iOiJiYXIifQ.VAoRL1IU0nOguxURF2ZcKR0S
 [error]
 
 
-=== TEST 6: JWT sign HS512
+=== TEST 2: JWT sign HS512
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -141,7 +65,7 @@ eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJmb28iOiJiYXIifQ._r7cUx1935GlmpI41mElmYQJ
 [error]
 
 
-=== TEST 7: JWT verify invalid
+=== TEST 3: JWT verify invalid
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -163,7 +87,7 @@ invalid jwt string
 [error]
 
 
-=== TEST 8: JWT verify wrong signature
+=== TEST 4: JWT verify wrong signature
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -188,7 +112,7 @@ signature mismatch: signature
 [error]
 
 
-=== TEST 9: JWT simple verify
+=== TEST 5: JWT simple verify
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -213,32 +137,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 9: JWT simple verify
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIifQ" ..
-                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-true
-everything is awesome~ :p
---- no_error_log
-[error]
-
-
-=== TEST 10: JWT simple with 0 leeway and valid exp
+=== TEST 6: JWT simple with 0 leeway and valid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -264,7 +163,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 11: JWT simple with 0 leeway and invalid exp
+=== TEST 7: JWT simple with 0 leeway and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -290,7 +189,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 12: JWT simple with 0 leeway and valid nbf
+=== TEST 8: JWT simple with 0 leeway and valid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -316,7 +215,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 13: JWT simple with 0 leeway and invalid nbf
+=== TEST 9: JWT simple with 0 leeway and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -342,7 +241,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
 [error]
 
 
-=== TEST 14: JWT simple with super large leeway and invalid nbf
+=== TEST 10: JWT simple with super large leeway and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -368,7 +267,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 15: JWT sign and verify
+=== TEST 11: JWT sign and verify
 --- http_config eval: $::HttpConfig
 --- config
     location /t {

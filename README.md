@@ -3,6 +3,12 @@ Name
 
 lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01.html) for ngx_lua and LuaJIT
 
+version
+=======
+
+0.1.0
+
+
 Table of Contents
 =================
 
@@ -107,9 +113,18 @@ The `alg` argument specifies which hashing algorithm to use (`HS256`, `HS512`).
 
 verify
 ------
-`syntax: local jwt_obj = jwt:verify(key jwt_token, [, leeway])`
+`syntax: local jwt_obj = jwt:verify(key, jwt_token, [, leeway])`
 
 verify a jwt_token and returns a jwt_obj table
+
+
+load & verify
+----------------------------------------
+`syntax: local jwt_obj = jwt:load_jwt(jwt_token)`
+`syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, leeway])`
+*verify = load_jwt +  verify_jwt_obj *
+load jwt, check for kid, then verify it with the correct key
+
 
 ### sample of jwt_obj ###
 ```
@@ -120,6 +135,7 @@ verify a jwt_token and returns a jwt_obj table
     "header": {"typ": "JWT", "alg": "HS256"},
     "payload": {"foo": "bar"},
     "verified": false,
+    "valid": true,
     "reason": "signature mismatche: wrong-signature"
 }
 ```
