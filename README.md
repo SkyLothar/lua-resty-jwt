@@ -122,7 +122,10 @@ load & verify
 ----------------------------------------
 `syntax: local jwt_obj = jwt:load_jwt(jwt_token)`
 `syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, leeway])`
-*verify = load_jwt +  verify_jwt_obj *
+
+
+__verify = load_jwt +  verify_jwt_obj__
+
 load jwt, check for kid, then verify it with the correct key
 
 
