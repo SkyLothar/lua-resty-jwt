@@ -20,7 +20,7 @@ Table of Contents
     * [sign](#sign)
     * [verify](#verify)
     * [load and verify](#load--verify)
-* [Example](examples/README.md)
+* [Example](#examples)
 * [Installation](#installation)
 * [Copyright and License](#copyright-and-license)
 * [See Also](#see-also)
