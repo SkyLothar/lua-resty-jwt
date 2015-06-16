@@ -19,7 +19,8 @@ Table of Contents
 * [Methods](#methods)
     * [sign](#sign)
     * [verify](#verify)
-* [Prerequisites](#prerequisites)
+    * [load and verify](#load&verify)
+* [Example](example/README.md)
 * [Installation](#installation)
 * [Copyright and License](#copyright-and-license)
 * [See Also](#see-also)
@@ -139,6 +140,13 @@ load jwt, check for kid, then verify it with the correct key
     "reason": "signature mismatche: wrong-signature"
 }
 ```
+
+[Back to TOC](#table-of-contents)
+
+Examples
+========
+* [JWT Auth With Query and Cookie](example/README.md)
+* [JWT Auth With KID and Store Your Key in Redis](example/README.md)
 
 [Back to TOC](#table-of-contents)
 

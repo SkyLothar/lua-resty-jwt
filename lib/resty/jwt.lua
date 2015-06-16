@@ -101,7 +101,11 @@ end
 function _M.load_jwt(self, jwt_str)
     local success, ret = pcall(parse, jwt_str)
     if not success then
-        return {valid=false, verified=false, reason=ret["reason"] or "invalid jwt string"}
+        return {
+            valid=false,
+            verified=false,
+            reason=ret["reason"] or "invalid jwt string"
+        }
     end
 
     local jwt_obj = ret
@@ -132,9 +136,11 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
         local now = ngx.now()
 
         if type(exp) == "number" and exp < (now - leeway) then
-            jwt_obj["reason"] = "jwt token expired at: " .. ngx.http_time(exp)
+            jwt_obj["reason"] = "jwt token expired at: " ..
+                ngx.http_time(exp)
         elseif type(nbf) == "number" and nbf > (now + leeway) then
-            jwt_obj["reason"] = "jwt token not valid until: " .. ngx.http_time(nbf)
+            jwt_obj["reason"] = "jwt token not valid until: " ..
+                ngx.http_time(nbf)
         end
     end
 
