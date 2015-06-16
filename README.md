@@ -121,9 +121,14 @@ verify a jwt_token and returns a jwt_obj table
 
 load & verify
 ----------------------------------------
-`syntax: local jwt_obj = jwt:load_jwt(jwt_token)`
-`syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, leeway])`
-*verify = load_jwt +  verify_jwt_obj *
+```
+syntax: local jwt_obj = jwt:load_jwt(jwt_token)
+syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, leeway])
+```
+
+
+__verify = load_jwt +  verify_jwt_obj__
+
 load jwt, check for kid, then verify it with the correct key
 
 
