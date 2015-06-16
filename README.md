@@ -19,8 +19,8 @@ Table of Contents
 * [Methods](#methods)
     * [sign](#sign)
     * [verify](#verify)
-    * [load and verify](#load&verify)
-* [Example](example/README.md)
+    * [load and verify](#load--verify)
+* [Example](examples/README.md)
 * [Installation](#installation)
 * [Copyright and License](#copyright-and-license)
 * [See Also](#see-also)
@@ -150,8 +150,8 @@ load jwt, check for kid, then verify it with the correct key
 
 Examples
 ========
-* [JWT Auth With Query and Cookie](example/README.md)
-* [JWT Auth With KID and Store Your Key in Redis](example/README.md)
+* [JWT Auth With Query and Cookie](examples/README.md#jwt-auth-using-query-and-cookie)
+* [JWT Auth With KID and Store Your Key in Redis](examples/README.md#jwt-auth-with-kid-and-store-keys-in-redis)
 
 [Back to TOC](#table-of-contents)
 
