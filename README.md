@@ -182,6 +182,14 @@ and then load the library in Lua:
 
 [Back to TOC](#table-of-contents)
 
+Testing With Docker
+===================
+
+```
+docker build -t lua-resty-jwt .
+docker run --rm -it -v `pwd`:/lua-resty-jwt lua-resty-jwt make test
+```
+
 See Also
 ========
 * the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
