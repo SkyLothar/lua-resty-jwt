@@ -1,8 +1,8 @@
 local cjson = require "cjson"
+local evp = require "resty.evp"
 local hmac = require "resty.hmac"
 
 local _M = {_VERSION="0.1.0"}
-local evp = require "resty.evp"
 local mt = {__index=_M}
 
 
@@ -219,9 +219,12 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
     else
         jwt_obj["reason"] = "Unsupported algorithm " .. alg
     end
-    if leeway ~= nil and not jwt_obj["reason"] then
-        local exp = jwt_obj["payload"]["exp"]
-        local nbf = jwt_obj["payload"]["nbf"]
+
+    local exp = jwt_obj["payload"]["exp"]
+    local nbf = jwt_obj["payload"]["nbf"]
+
+    if (exp ~= nil or nbf ~= nil ) and not jwt_obj["reason"] then
+        leeway = leeway or 0
         local now = ngx.now()
 
         if type(exp) == "number" and exp < (now - leeway) then

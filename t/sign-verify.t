@@ -137,7 +137,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 6: JWT simple with 0 leeway and valid exp
+=== TEST 6: JWT simple with default leeway and valid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -147,8 +147,7 @@ everything is awesome~ :p
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjk5OTk5OTk5OTl9" ..
-                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw",
-                0
+                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw"
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -163,7 +162,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 7: JWT simple with 0 leeway and invalid exp
+=== TEST 7: JWT simple with default leeway and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -173,8 +172,7 @@ everything is awesome~ :p
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjB9" ..
-                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg",
-                0
+                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg"
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -189,7 +187,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 8: JWT simple with 0 leeway and valid nbf
+=== TEST 8: JWT simple with default leeway and valid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -199,8 +197,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjB9" ..
-                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo",
-                0
+                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo"
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -215,7 +212,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 9: JWT simple with 0 leeway and invalid nbf
+=== TEST 9: JWT simple with default leeway and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -225,8 +222,7 @@ everything is awesome~ :p
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
-                0
+                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])

@@ -206,7 +206,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 10: JWT simple with 0 leeway and valid exp
+=== TEST 10: JWT simple with default leeway and valid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -218,7 +218,7 @@ everything is awesome~ :p
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj, 0
+                "lua-resty-jwt", jwt_obj
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -233,7 +233,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 11: JWT simple with 0 leeway and invalid exp
+=== TEST 11: JWT simple with default leeway and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -245,7 +245,7 @@ everything is awesome~ :p
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj, 0
+                "lua-resty-jwt", jwt_obj
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -260,7 +260,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 12: JWT simple with 0 leeway and valid nbf
+=== TEST 12: JWT simple with default leeway and valid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -272,7 +272,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj, 0
+                "lua-resty-jwt", jwt_obj
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -287,7 +287,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 13: JWT simple with 0 leeway and invalid nbf
+=== TEST 13: JWT simple with default leeway and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -299,7 +299,7 @@ everything is awesome~ :p
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj, 0
+                "lua-resty-jwt", jwt_obj
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
