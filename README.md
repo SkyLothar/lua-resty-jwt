@@ -22,7 +22,8 @@ Table of Contents
     * [load and verify](#load--verify)
 * [Example](#examples)
 * [Installation](#installation)
-* [Copyright and License](#copyright-and-license)
+* [Testing With Docker](#testing-with-docker)
+* [Authors](AUTHORS.md)
 * [See Also](#see-also)
 
 Status
@@ -102,7 +103,7 @@ sign
 
 sign a table_of_jwt to a jwt_token.
 
-The `alg` argument specifies which hashing algorithm to use (`HS256`, `HS512`).
+The `alg` argument specifies which hashing algorithm to use (`HS256`, `HS512`, `RS256`).
 
 ### sample of table_of_jwt ###
 ```
@@ -189,6 +190,9 @@ Testing With Docker
 docker build -t lua-resty-jwt .
 docker run --rm -it -v `pwd`:/lua-resty-jwt lua-resty-jwt make test
 ```
+
+[Back to TOC](#table-of-contents)
+
 
 See Also
 ========
