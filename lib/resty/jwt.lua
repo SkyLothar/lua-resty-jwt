@@ -2,7 +2,7 @@ local cjson = require "cjson"
 local evp = require "resty.evp"
 local hmac = require "resty.hmac"
 
-local _M = {_VERSION="0.1.0"}
+local _M = {_VERSION="0.1.1"}
 local mt = {__index=_M}
 
 
