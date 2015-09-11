@@ -163,34 +163,34 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
             jwt_obj["reason"] = "signature mismatch: " .. jwt_obj["signature"]
         end
     elseif alg == "RS256" then
-        local x5c = jwt_obj['header']['x5c']
-        if not x5c or not x5c[1] then
-            jwt_obj["reason"] = "Unsupported RS256 key model"
-            return jwt_obj
-            -- TODO - Implement jwk and kid based models...
-        end
-
-        -- TODO Might want to add support for intermediaries that we
-        -- don't have in our trusted chain (items 2... if present)
-        local cert_str = ngx.decode_base64(x5c[1])
-        if not cert_str then
-            jwt_obj["reason"] = "Malformed x5c header"
-            return jwt_obj
-        end
-        local cert, err = evp.Cert:new(cert_str)
-        if not cert then
-            jwt_obj["reason"] = "Unable to extract signing cert from JWT: " .. err
-            return jwt_obj
-        end
-        -- Try validating against trusted CA's, then a cert passed as secret
         if self.trusted_certs_file ~= nil then
+            local x5c = jwt_obj['header']['x5c']
+            if not x5c or not x5c[1] then
+                jwt_obj["reason"] = "Unsupported RS256 key model"
+                return jwt_obj
+                -- TODO - Implement jwk and kid based models...
+            end
+    
+            -- TODO Might want to add support for intermediaries that we
+            -- don't have in our trusted chain (items 2... if present)
+            local cert_str = ngx.decode_base64(x5c[1])
+            if not cert_str then
+                jwt_obj["reason"] = "Malformed x5c header"
+                return jwt_obj
+            end
+            local cert, err = evp.Cert:new(cert_str)
+            if not cert then
+                jwt_obj["reason"] = "Unable to extract signing cert from JWT: " .. err
+                return jwt_obj
+            end
+            -- Try validating against trusted CA's, then a cert passed as secret
             local trusted, err = cert:verify_trust(self.trusted_certs_file)
             if not trusted then
                 jwt_obj["reason"] = "Cert used to sign the JWT isn't trusted: " .. err
                 return jwt_obj
             end
         elseif secret ~= nil then
-            cert, err = evp.Cert:new(secret)
+            local cert, err = evp.Cert:new(secret)
             if not cert then
                 jwt_obj["reason"] = "Decode secret is not a valid cert: " .. err
                 return jwt_obj
