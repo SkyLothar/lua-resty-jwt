@@ -163,8 +163,9 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
             jwt_obj["reason"] = "signature mismatch: " .. jwt_obj["signature"]
         end
     elseif alg == "RS256" then
+        local cert
         if self.trusted_certs_file ~= nil then
-            local x5c = jwt_obj['header']['x5c']
+            local err, x5c = jwt_obj['header']['x5c']
             if not x5c or not x5c[1] then
                 jwt_obj["reason"] = "Unsupported RS256 key model"
                 return jwt_obj
@@ -178,7 +179,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
                 jwt_obj["reason"] = "Malformed x5c header"
                 return jwt_obj
             end
-            local cert, err = evp.Cert:new(cert_str)
+            cert, err = evp.Cert:new(cert_str)
             if not cert then
                 jwt_obj["reason"] = "Unable to extract signing cert from JWT: " .. err
                 return jwt_obj
@@ -190,7 +191,8 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
                 return jwt_obj
             end
         elseif secret ~= nil then
-            local cert, err = evp.Cert:new(secret)
+            local err
+            cert, err = evp.Cert:new(secret)
             if not cert then
                 jwt_obj["reason"] = "Decode secret is not a valid cert: " .. err
                 return jwt_obj
