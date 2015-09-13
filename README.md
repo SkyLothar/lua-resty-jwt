@@ -6,7 +6,7 @@ lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01
 version
 =======
 
-0.1.1
+0.1.2
 
 
 Table of Contents
