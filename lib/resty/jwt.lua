@@ -92,8 +92,7 @@ function _M.sign(self, secret_key, jwt_obj)
     -- header typ check
     local typ = jwt_obj["header"]["typ"]
     -- Optional header typ check [See http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-5.1]
-    if jwt_obj["header"]["typ"] ~= nil then 
-        local typ = jwt_obj["header"]["typ"]
+    if typ ~= nil then 
         if typ ~= "JWT" then
             error({reason="invalid typ: " .. typ})
         end
