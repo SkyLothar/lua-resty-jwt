@@ -91,9 +91,13 @@ _M.alg_whitelist = nil
 function _M.sign(self, secret_key, jwt_obj)
     -- header typ check
     local typ = jwt_obj["header"]["typ"]
-    if typ ~= "JWT" then
-        error({reason="invalid typ: " .. typ})
+    -- Optional header typ check [See http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-5.1]
+    if typ ~= nil then 
+        if typ ~= "JWT" then
+            error({reason="invalid typ: " .. typ})
+        end
     end
+
 
     -- assemble jwt parts
     local raw_header = get_raw_part("header", jwt_obj)
