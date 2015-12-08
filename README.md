@@ -20,6 +20,7 @@ Table of Contents
     * [sign](#sign)
     * [verify](#verify)
     * [load and verify](#load--verify)
+    * [sign JWE](#sign-jwe)
 * [Example](#examples)
 * [Installation](#installation)
 * [Testing With Docker](#testing-with-docker)
@@ -37,7 +38,9 @@ Description
 This library requires an nginx build with OpenSSL,
 the [ngx_lua module](http://wiki.nginx.org/HttpLuaModule),
 the [LuaJIT 2.0](http://luajit.org/luajit.html),
-and the [lua-resty-hmac](https://github.com/jkeys089/lua-resty-hmac)
+the [lua-resty-hmac](https://github.com/jkeys089/lua-resty-hmac),
+and the [lua-resty-string](https://github.com/openresty/lua-resty-string),
+
 
 Synopsis
 ========
@@ -147,6 +150,29 @@ load jwt, check for kid, then verify it with the correct key
 }
 ```
 
+sign-jwe
+----
+
+`syntax: local jwt_token = jwt:sign(key, table_of_jwt)`
+
+sign a table_of_jwt to a jwt_token.
+
+The `alg` argument specifies which hashing algorithm to use for encrypting key (`DIR`).
+The `enc` argument specifies which hashing algorithm to use for encrypting payload (`A128CBC_HS256`, `A256CBC_HS512`)
+
+### sample of table_of_jwt ###
+```
+{
+    "header": {"typ": "JWE", "alg": "DIR", "enc":"A128CBC_HS256"},
+    "payload": {"foo": "bar"}
+}
+```
+
+verify
+------
+`syntax: local jwt_obj = jwt:verify(key, jwt_token, [, leeway])`
+
+verify a jwt_token and returns a jwt_obj table
 [Back to TOC](#table-of-contents)
 
 Examples
