@@ -20,8 +20,6 @@ local cjson_decode = cjson.decode
 
 -- define string constants to avoid string garbage collection
 local str_const = {
-  regex_parse_token = '([^%.]+)%.([^%.]+)%.([^%.]+)%.([^%.]+)%.([^%.]+)',
-  regex_split_enc = '([^%.]+)%_([^%.]+)',
   regex_join_msg = '%s.%s',
   regex_join_delim = '([^%s]+)',
   regex_split_dot = '%.',
@@ -100,11 +98,10 @@ local function decrypt_payload(secret_key, encrypted_payload, enc, iv_in )
   if enc == str_const.A128CBC_HS256 then
     local aes_128_cbc_with_iv = assert(aes:new(secret_key, str_const.AES, aes.cipher(128,str_const.cbc), {iv=iv_in} ))
     decrypted_payload=  aes_128_cbc_with_iv:decrypt(encrypted_payload)
-    
   elseif enc == str_const.A256CBC_HS512 then
     local aes_256_cbc_with_iv = assert(aes:new(secret_key, str_const.AES, aes.cipher(256,str_const.cbc), {iv=iv_in} ))
     decrypted_payload=  aes_256_cbc_with_iv:decrypt(encrypted_payload)
-    
+
   else
     return nil, "unsupported enc: " .. enc
   end
@@ -179,14 +176,16 @@ end
 --@encoded-header
 local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, encoded_iv, encoded_cipher_text, encoded_auth_tag)
 
+
   local header = _M:jwt_decode(encoded_header, true)
   if not header then
     error({reason="invalid header: " .. encoded_header})
   end
+
   -- use preshared key if given otherwise decrypt the encoded key
   local key = preshared_key
   if not preshared_key then
-    local encrypted_key = ngx_decode_base64(encoded_encrypted_key)
+    local encrypted_key = _M:jwt_decode(encoded_encrypted_key)
     if header.alg == str_const.DIR then
       error({reason="preshared key must not ne null"})
     else  -- implement algorithm to decrypt the key
@@ -194,9 +193,8 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
     end
   end 
 
-  local cipher_text = ngx_decode_base64(encoded_cipher_text)  
-
-  local iv =  ngx_decode_base64(encoded_iv)
+  local cipher_text = _M:jwt_decode(encoded_cipher_text)  
+  local iv =  _M:jwt_decode(encoded_iv)
 
   local basic_jwe = {
     internal = {
@@ -206,13 +204,14 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
       iv = iv
     },
     header=header,
-    signature= ngx_decode_base64(encoded_auth_tag)
+    signature=_M:jwt_decode(encoded_auth_tag)
   }
 
 
   local json_payload, err = decrypt_payload(key, cipher_text, header.enc, iv )
   if not json_payload then
     basic_jwe.reason = err
+
   else
     basic_jwe.payload = cjson.decode(json_payload)
     basic_jwe.internal.json_payload=json_payload
@@ -279,6 +278,8 @@ end
 
 --@function jwt decode : decode bas64 encoded string
 function _M.jwt_decode(self, b64_str, json_decode)
+  b64_str = b64_str:gsub(str_const.dash, str_const.plus):gsub(str_const.underscore, str_const.slash)
+  
   local reminder = #b64_str % 4
   if reminder > 0 then
     b64_str = b64_str .. string_rep(str_const.equal, 4 - reminder)
@@ -349,8 +350,8 @@ local function sign_jwe(secret_key, jwt_obj)
     error({reason="unsupported alg: " .. alg})
   end
   local auth_tag = string_sub(mac, 1, #mac/2) 
-  local jwe_table = {encoded_header, ngx_encode_base64(encrypted_key), ngx_encode_base64(iv), 
-    ngx_encode_base64(cipher_text),  ngx_encode_base64(auth_tag)}
+  local jwe_table = {encoded_header, _M:jwt_encode(encrypted_key), _M:jwt_encode(iv), 
+    _M:jwt_encode(cipher_text),   _M:jwt_encode(auth_tag)}
   return table_concat(jwe_table, '.', 1, 5)
 end
 
