@@ -213,7 +213,7 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
     basic_jwe.reason = err
 
   else
-    basic_jwe.payload = cjson.decode(json_payload)
+    basic_jwe.payload = cjson_decode(json_payload)
     basic_jwe.internal.json_payload=json_payload
   end 
   return basic_jwe
@@ -323,7 +323,7 @@ local function sign_jwe(secret_key, jwt_obj)
 
   local enc = jwt_obj.header.enc
   local key, mac_key, enc_key = derive_keys(enc, secret_key)
-  local json_payload = cjson.encode(jwt_obj.payload)
+  local json_payload = cjson_encode(jwt_obj.payload)
   local cipher_text, iv, err = encrypt_payload( key, json_payload, jwt_obj.header.enc )
   if err then
     error({reason="error while encryptiping payload. Error: " .. err})
