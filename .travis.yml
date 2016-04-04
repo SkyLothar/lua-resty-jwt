@@ -1,0 +1,14 @@
+language: bash
+
+services:
+  - docker
+  
+before_install:
+  - docker build -t lua-resty-jwt .
+
+script:
+  - docker run --rm -it -v `pwd`:/lua-resty-jwt lua-resty-jwt make test
+
+branches:
+  only:
+    - master
