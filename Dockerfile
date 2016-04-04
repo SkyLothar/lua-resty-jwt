@@ -35,3 +35,5 @@ RUN apt-get update && \
 RUN ln -s /usr/nginx/sbin/nginx /usr/sbin/nginx
 
 COPY . /lua-resty-jwt/
+
+RUN ls /lua-resty-jwt/testcerts

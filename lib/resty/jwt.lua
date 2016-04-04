@@ -48,6 +48,7 @@ local str_const = {
   AES = "AES",
   cbc = "cbc",
   x5c = "x5c",
+  x5u = 'x5u',
   HS256 = "HS256",
   HS512 = "HS512",
   RS256 = "RS256",
@@ -316,6 +317,20 @@ end
 
 _M.alg_whitelist = nil
 
+--- Set a function used to retrieve the content of x5u urls
+--
+-- @param retriever_function - A pointer to a function. This function should be
+--                             defined to accept one string parameter, the value
+--                             of the 'x5u' attribute in a jwt and return the
+--                             matching certificate.
+function _M.set_x5u_content_retriever(self, retriever_function)
+  if type(retriever_function) ~= "function" then
+    error("'retriever_function' is expected to be a function")
+  end
+  self.x5u_content_retriever = retriever_function
+end
+
+_M.x5u_content_retriever = nil
 
 --@function sign jwe payload
 --@param secret key : if used pre-shared or RSA key
@@ -471,7 +486,7 @@ end
 --@function extract certificate
 --@param jwt object
 --@return decoded certificate
-local function extract_certificate(jwt_obj)
+local function extract_certificate(jwt_obj, x5u_content_retriever)
   local x5c = jwt_obj[str_const.header][str_const.x5c]
   if x5c ~= nil and x5c[1] ~= nil then
     -- TODO Might want to add support for intermediaries that we
@@ -483,6 +498,33 @@ local function extract_certificate(jwt_obj)
 
     return cert_str
   end
+
+  local x5u = jwt_obj[str_const.header][str_const.x5u]
+  if x5u ~= nil then
+    -- TODO Ensure the url starts with https://
+    -- cf. https://tools.ietf.org/html/rfc7517#section-4.6
+
+    if x5u_content_retriever == nil then
+      jwt_obj[str_const.reason] = "No function has been provided to retrieve the content pointed at by the 'x5u'."
+      return nil
+    end
+
+    -- TODO Maybe validate the url against an optional list whitelisted url prefixes?
+    -- cf. https://news.ycombinator.com/item?id=9302394
+
+    local success, ret = pcall(x5u_content_retriever, x5u)
+
+    if not success then
+      jwt_obj[str_const.reason] = "An error occured while invoking the x5u_content_retriever function."
+      return nil
+    end
+
+    return ret
+  end
+
+  -- TODO When both x5c and x5u are defined, the implementation should
+  -- ensure their content match
+  -- cf. https://tools.ietf.org/html/rfc7517#section-4.6
 
   jwt_obj[str_const.reason] = "Unsupported RS256 key model"
   return nil
@@ -527,7 +569,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   elseif alg == str_const.RS256 then
     local cert
     if self.trusted_certs_file ~= nil then
-      local cert_str = extract_certificate(jwt_obj)
+      local cert_str = extract_certificate(jwt_obj, self.x5u_content_retriever)
       if not cert_str then
         return jwt_obj
       end
