@@ -60,7 +60,7 @@ local str_const = {
   valid = "valid",
   internal_error = "internal error",
   everything_awesome = "everything is awesome~ :p"
-} 
+}
 
 -- @function split string
 local function split_string(str, delim, maxNb)
@@ -69,12 +69,12 @@ local function split_string(str, delim, maxNb)
   for m in str:gmatch(sep) do
     result[#result+1]=m
   end
-  return result  
+  return result
 end
 
 --@function get the row part
 --@param part_name
---@param jwt_obj   
+--@param jwt_obj
 local function get_raw_part(part_name, jwt_obj)
   local raw_part = jwt_obj[str_const.raw_underscore .. part_name]
   if raw_part == nil then
@@ -192,9 +192,9 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
     else  -- implement algorithm to decrypt the key
       error({reason="invalid algorithm: " .. header.alg})
     end
-  end 
+  end
 
-  local cipher_text = _M:jwt_decode(encoded_cipher_text)  
+  local cipher_text = _M:jwt_decode(encoded_cipher_text)
   local iv =  _M:jwt_decode(encoded_iv)
 
   local basic_jwe = {
@@ -216,7 +216,7 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
   else
     basic_jwe.payload = cjson_decode(json_payload)
     basic_jwe.internal.json_payload=json_payload
-  end 
+  end
   return basic_jwe
 end
 
@@ -262,7 +262,7 @@ local function parse(secret, token_str)
   else
     error({reason=str_const.invalid_jwt})
   end
-end 
+end
 
 
 --@function jwt encode : it converts into base64 encoded string. if input is a table, it convets into
@@ -281,7 +281,7 @@ end
 --@function jwt decode : decode bas64 encoded string
 function _M.jwt_decode(self, b64_str, json_decode)
   b64_str = b64_str:gsub(str_const.dash, str_const.plus):gsub(str_const.underscore, str_const.slash)
-  
+
   local reminder = #b64_str % 4
   if reminder > 0 then
     b64_str = b64_str .. string_rep(str_const.equal, 4 - reminder)
@@ -346,31 +346,31 @@ local function sign_jwe(secret_key, jwt_obj)
   local mac = hmac_digest(enc, mac_key, mac_input)
   -- TODO: implement logic for creating enc key and mac key and then encrypt key
   local encrypted_key
-  if alg ==  str_const.DIR then 
+  if alg ==  str_const.DIR then
     encrypted_key = ""
   else
     error({reason="unsupported alg: " .. alg})
   end
-  local auth_tag = string_sub(mac, 1, #mac/2) 
-  local jwe_table = {encoded_header, _M:jwt_encode(encrypted_key), _M:jwt_encode(iv), 
+  local auth_tag = string_sub(mac, 1, #mac/2)
+  local jwe_table = {encoded_header, _M:jwt_encode(encrypted_key), _M:jwt_encode(iv),
     _M:jwt_encode(cipher_text),   _M:jwt_encode(auth_tag)}
   return table_concat(jwe_table, ".", 1, 5)
 end
 
 --@function sign  : create a jwt/jwe signature from jwt_object
---@param secret key 
+--@param secret key
 --@param jwt/jwe payload
 function _M.sign(self, secret_key, jwt_obj)
   -- header typ check
   local typ = jwt_obj[str_const.header][str_const.typ]
   -- Optional header typ check [See http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-5.1]
-  if typ ~= nil then 
+  if typ ~= nil then
     if typ ~= str_const.JWT and typ ~= str_const.JWE then
       error({reason="invalid typ: " .. typ})
     end
   end
 
-  if typ == str_const.JWE or jwt_obj.header.enc then  
+  if typ == str_const.JWE or jwt_obj.header.enc then
     return sign_jwe(secret_key, jwt_obj)
   end
   -- header alg check
@@ -447,7 +447,7 @@ local function verify_jwe_obj(secret, jwt_obj, leeway)
   local encoded_header_length = #encoded_header -- FIXME: Not sure how to get this
   local mac_input = table_concat({encoded_header , jwt_obj.internal.iv, jwt_obj.internal.cipher_text , encoded_header_length})
   local mac = hmac_digest(jwt_obj.header.enc, mac_key,  mac_input)
-  local auth_tag = string_sub(mac, 1, #mac/2) 
+  local auth_tag = string_sub(mac, 1, #mac/2)
 
   if auth_tag ~= jwt_obj.signature then
     jwt_obj[str_const.reason] = "signature mismatch: " .. jwt_obj[str_const.signature]
