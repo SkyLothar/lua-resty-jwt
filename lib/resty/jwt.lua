@@ -468,6 +468,27 @@ local function verify_jwe_obj(secret, jwt_obj, leeway)
   return jwt_obj
 end
 
+--@function extract certificate
+--@param jwt object
+--@return decoded certificate
+local function extract_certificate(jwt_obj)
+  local x5c = jwt_obj[str_const.header][str_const.x5c]
+  if x5c ~= nil and x5c[1] ~= nil then
+    -- TODO Might want to add support for intermediaries that we
+    -- don't have in our trusted chain (items 2... if present)
+    local cert_str = ngx_decode_base64(x5c[1])
+    if not cert_str then
+      jwt_obj[str_const.reason] = "Malformed x5c header"
+    end
+
+    return cert_str
+  end
+
+  jwt_obj[str_const.reason] = "Unsupported RS256 key model"
+  return nil
+  -- TODO - Implement jwk and kid based models...
+end
+
 --@function verify jwt object
 --@param secret
 --@param jwt_object
@@ -506,18 +527,8 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   elseif alg == str_const.RS256 then
     local cert
     if self.trusted_certs_file ~= nil then
-      local x5c = jwt_obj[str_const.header][str_const.x5c]
-      if not x5c or not x5c[1] then
-        jwt_obj[str_const.reason] = "Unsupported RS256 key model"
-        return jwt_obj
-        -- TODO - Implement jwk and kid based models...
-      end
-
-      -- TODO Might want to add support for intermediaries that we
-      -- don't have in our trusted chain (items 2... if present)
-      local cert_str = ngx_decode_base64(x5c[1])
+      local cert_str = extract_certificate(jwt_obj)
       if not cert_str then
-        jwt_obj[str_const.reason] = "Malformed x5c header"
         return jwt_obj
       end
       cert, err = evp.Cert:new(cert_str)
