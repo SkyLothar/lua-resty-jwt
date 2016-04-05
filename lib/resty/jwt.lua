@@ -454,7 +454,7 @@ end
 --@function verify jwe object
 --@param secret
 --@param jwt object
---@return owt object with reason whether verified or not
+--@return jwt object with reason whether verified or not
 local function verify_jwe_obj(secret, jwt_obj, leeway)
   local key, mac_key, enc_key = derive_keys(jwt_obj.header.enc, jwt_obj.internal.key)
   local encoded_header = jwt_obj.internal.encoded_header
