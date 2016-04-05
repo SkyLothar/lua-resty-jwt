@@ -48,6 +48,7 @@ local str_const = {
   AES = "AES",
   cbc = "cbc",
   x5c = "x5c",
+  x5u = 'x5u',
   HS256 = "HS256",
   HS512 = "HS512",
   RS256 = "RS256",
@@ -60,7 +61,7 @@ local str_const = {
   valid = "valid",
   internal_error = "internal error",
   everything_awesome = "everything is awesome~ :p"
-} 
+}
 
 -- @function split string
 local function split_string(str, delim, maxNb)
@@ -69,12 +70,12 @@ local function split_string(str, delim, maxNb)
   for m in str:gmatch(sep) do
     result[#result+1]=m
   end
-  return result  
+  return result
 end
 
 --@function get the row part
 --@param part_name
---@param jwt_obj   
+--@param jwt_obj
 local function get_raw_part(part_name, jwt_obj)
   local raw_part = jwt_obj[str_const.raw_underscore .. part_name]
   if raw_part == nil then
@@ -192,9 +193,9 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
     else  -- implement algorithm to decrypt the key
       error({reason="invalid algorithm: " .. header.alg})
     end
-  end 
+  end
 
-  local cipher_text = _M:jwt_decode(encoded_cipher_text)  
+  local cipher_text = _M:jwt_decode(encoded_cipher_text)
   local iv =  _M:jwt_decode(encoded_iv)
 
   local basic_jwe = {
@@ -216,7 +217,7 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
   else
     basic_jwe.payload = cjson_decode(json_payload)
     basic_jwe.internal.json_payload=json_payload
-  end 
+  end
   return basic_jwe
 end
 
@@ -262,7 +263,7 @@ local function parse(secret, token_str)
   else
     error({reason=str_const.invalid_jwt})
   end
-end 
+end
 
 
 --@function jwt encode : it converts into base64 encoded string. if input is a table, it convets into
@@ -281,7 +282,7 @@ end
 --@function jwt decode : decode bas64 encoded string
 function _M.jwt_decode(self, b64_str, json_decode)
   b64_str = b64_str:gsub(str_const.dash, str_const.plus):gsub(str_const.underscore, str_const.slash)
-  
+
   local reminder = #b64_str % 4
   if reminder > 0 then
     b64_str = b64_str .. string_rep(str_const.equal, 4 - reminder)
@@ -316,6 +317,20 @@ end
 
 _M.alg_whitelist = nil
 
+--- Set a function used to retrieve the content of x5u urls
+--
+-- @param retriever_function - A pointer to a function. This function should be
+--                             defined to accept one string parameter, the value
+--                             of the 'x5u' attribute in a jwt and return the
+--                             matching certificate.
+function _M.set_x5u_content_retriever(self, retriever_function)
+  if type(retriever_function) ~= "function" then
+    error("'retriever_function' is expected to be a function")
+  end
+  self.x5u_content_retriever = retriever_function
+end
+
+_M.x5u_content_retriever = nil
 
 --@function sign jwe payload
 --@param secret key : if used pre-shared or RSA key
@@ -346,31 +361,31 @@ local function sign_jwe(secret_key, jwt_obj)
   local mac = hmac_digest(enc, mac_key, mac_input)
   -- TODO: implement logic for creating enc key and mac key and then encrypt key
   local encrypted_key
-  if alg ==  str_const.DIR then 
+  if alg ==  str_const.DIR then
     encrypted_key = ""
   else
     error({reason="unsupported alg: " .. alg})
   end
-  local auth_tag = string_sub(mac, 1, #mac/2) 
-  local jwe_table = {encoded_header, _M:jwt_encode(encrypted_key), _M:jwt_encode(iv), 
+  local auth_tag = string_sub(mac, 1, #mac/2)
+  local jwe_table = {encoded_header, _M:jwt_encode(encrypted_key), _M:jwt_encode(iv),
     _M:jwt_encode(cipher_text),   _M:jwt_encode(auth_tag)}
   return table_concat(jwe_table, ".", 1, 5)
 end
 
 --@function sign  : create a jwt/jwe signature from jwt_object
---@param secret key 
+--@param secret key
 --@param jwt/jwe payload
 function _M.sign(self, secret_key, jwt_obj)
   -- header typ check
   local typ = jwt_obj[str_const.header][str_const.typ]
   -- Optional header typ check [See http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-5.1]
-  if typ ~= nil then 
+  if typ ~= nil then
     if typ ~= str_const.JWT and typ ~= str_const.JWE then
       error({reason="invalid typ: " .. typ})
     end
   end
 
-  if typ == str_const.JWE or jwt_obj.header.enc then  
+  if typ == str_const.JWE or jwt_obj.header.enc then
     return sign_jwe(secret_key, jwt_obj)
   end
   -- header alg check
@@ -439,7 +454,7 @@ end
 --@function verify jwe object
 --@param secret
 --@param jwt object
---@return owt object with reason whether verified or not
+--@return jwt object with reason whether verified or not
 local function verify_jwe_obj(secret, jwt_obj, leeway)
   local key, mac_key, enc_key = derive_keys(jwt_obj.header.enc, jwt_obj.internal.key)
   local encoded_header = jwt_obj.internal.encoded_header
@@ -447,7 +462,7 @@ local function verify_jwe_obj(secret, jwt_obj, leeway)
   local encoded_header_length = #encoded_header -- FIXME: Not sure how to get this
   local mac_input = table_concat({encoded_header , jwt_obj.internal.iv, jwt_obj.internal.cipher_text , encoded_header_length})
   local mac = hmac_digest(jwt_obj.header.enc, mac_key,  mac_input)
-  local auth_tag = string_sub(mac, 1, #mac/2) 
+  local auth_tag = string_sub(mac, 1, #mac/2)
 
   if auth_tag ~= jwt_obj.signature then
     jwt_obj[str_const.reason] = "signature mismatch: " .. jwt_obj[str_const.signature]
@@ -466,6 +481,54 @@ local function verify_jwe_obj(secret, jwt_obj, leeway)
   end
 
   return jwt_obj
+end
+
+--@function extract certificate
+--@param jwt object
+--@return decoded certificate
+local function extract_certificate(jwt_obj, x5u_content_retriever)
+  local x5c = jwt_obj[str_const.header][str_const.x5c]
+  if x5c ~= nil and x5c[1] ~= nil then
+    -- TODO Might want to add support for intermediaries that we
+    -- don't have in our trusted chain (items 2... if present)
+    local cert_str = ngx_decode_base64(x5c[1])
+    if not cert_str then
+      jwt_obj[str_const.reason] = "Malformed x5c header"
+    end
+
+    return cert_str
+  end
+
+  local x5u = jwt_obj[str_const.header][str_const.x5u]
+  if x5u ~= nil then
+    -- TODO Ensure the url starts with https://
+    -- cf. https://tools.ietf.org/html/rfc7517#section-4.6
+
+    if x5u_content_retriever == nil then
+      jwt_obj[str_const.reason] = "No function has been provided to retrieve the content pointed at by the 'x5u'."
+      return nil
+    end
+
+    -- TODO Maybe validate the url against an optional list whitelisted url prefixes?
+    -- cf. https://news.ycombinator.com/item?id=9302394
+
+    local success, ret = pcall(x5u_content_retriever, x5u)
+
+    if not success then
+      jwt_obj[str_const.reason] = "An error occured while invoking the x5u_content_retriever function."
+      return nil
+    end
+
+    return ret
+  end
+
+  -- TODO When both x5c and x5u are defined, the implementation should
+  -- ensure their content match
+  -- cf. https://tools.ietf.org/html/rfc7517#section-4.6
+
+  jwt_obj[str_const.reason] = "Unsupported RS256 key model"
+  return nil
+  -- TODO - Implement jwk and kid based models...
 end
 
 --@function verify jwt object
@@ -506,18 +569,8 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   elseif alg == str_const.RS256 then
     local cert
     if self.trusted_certs_file ~= nil then
-      local x5c = jwt_obj[str_const.header][str_const.x5c]
-      if not x5c or not x5c[1] then
-        jwt_obj[str_const.reason] = "Unsupported RS256 key model"
-        return jwt_obj
-        -- TODO - Implement jwk and kid based models...
-      end
-
-      -- TODO Might want to add support for intermediaries that we
-      -- don't have in our trusted chain (items 2... if present)
-      local cert_str = ngx_decode_base64(x5c[1])
+      local cert_str = extract_certificate(jwt_obj, self.x5u_content_retriever)
       if not cert_str then
-        jwt_obj[str_const.reason] = "Malformed x5c header"
         return jwt_obj
       end
       cert, err = evp.Cert:new(cert_str)
