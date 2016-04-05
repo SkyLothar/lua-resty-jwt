@@ -141,9 +141,7 @@ reason: invalid payload: eyJmb28iOiJiYXIifQbad-format
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
-            local jwt_obj = jwt:load_jwt(
-                "lua-resty-jwt", "invalid-random-str"
-            )
+            local jwt_obj = jwt:load_jwt("invalid-random-str")
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
         ';

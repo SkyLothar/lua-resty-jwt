@@ -1,4 +1,4 @@
-local cjson = require "cjson"
+local cjson = require "cjson.safe"
 local aes = require "resty.aes"
 local evp = require "resty.evp"
 local hmac = require "resty.hmac"
@@ -20,19 +20,20 @@ local cjson_decode = cjson.decode
 
 -- define string constants to avoid string garbage collection
 local str_const = {
-  regex_join_msg = '%s.%s',
-  regex_join_delim = '([^%s]+)',
-  regex_split_dot = '%.',
-  regex_jwt_join_str = '%s.%s.%s',
+  invalid_jwt= "invalid jwt string",
+  regex_join_msg = "%s.%s",
+  regex_join_delim = "([^%s]+)",
+  regex_split_dot = "%.",
+  regex_jwt_join_str = "%s.%s.%s",
   raw_underscore  = "raw_",
   dash = "-",
   empty = "",
-  dotdot = '..',
+  dotdot = "..",
   table  = "table",
-  plus = '+',
-  equal = '=',
-  underscore = '_',
-  slash = '/',
+  plus = "+",
+  equal = "=",
+  underscore = "_",
+  slash = "/",
   header = "header",
   typ = "typ",
   JWT = "JWT",
@@ -46,7 +47,7 @@ local str_const = {
   nbf = "nbf",
   AES = "AES",
   cbc = "cbc",
-  x5c = 'x5c',
+  x5c = "x5c",
   HS256 = "HS256",
   HS512 = "HS512",
   RS256 = "RS256",
@@ -225,10 +226,9 @@ end
 -- @param signature
 -- @return jwt table
 local function parse_jwt(encoded_header, encoded_payload, signature)
-
   local header = _M:jwt_decode(encoded_header, true)
   if not header then
-    error({reason="failed to decrypt encoded header: " .. encoded_header})
+    error({reason="invalid header: " .. encoded_header})
   end
 
   local payload = _M:jwt_decode(encoded_payload, true)
@@ -253,12 +253,14 @@ end
 local function parse(secret, token_str)
   local tokens = split_string(token_str, str_const.regex_split_dot)
   local num_tokens = #tokens
-  if num_tokens == 4  then
+  if num_tokens == 3 then
+    return  parse_jwt(tokens[1], tokens[2], tokens[3])
+  elseif num_tokens == 4  then
     return parse_jwe(secret, tokens[1], "", tokens[2], tokens[3],  tokens[4])
   elseif num_tokens == 5 then
     return parse_jwe(secret, tokens[1], tokens[2], tokens[3],  tokens[4], tokens[5])
   else
-    return  parse_jwt(tokens[1], tokens[2], tokens[3])
+    error({reason=str_const.invalid_jwt})
   end
 end 
 
@@ -352,7 +354,7 @@ local function sign_jwe(secret_key, jwt_obj)
   local auth_tag = string_sub(mac, 1, #mac/2) 
   local jwe_table = {encoded_header, _M:jwt_encode(encrypted_key), _M:jwt_encode(iv), 
     _M:jwt_encode(cipher_text),   _M:jwt_encode(auth_tag)}
-  return table_concat(jwe_table, '.', 1, 5)
+  return table_concat(jwe_table, ".", 1, 5)
 end
 
 --@function sign  : create a jwt/jwe signature from jwt_object
@@ -398,13 +400,14 @@ end
 
 --@function load jwt
 --@param jwt string token
-function _M.load_jwt(self, secret, jwt_str)
+--@param secret
+function _M.load_jwt(self, jwt_str, secret)
   local success, ret = pcall(parse, secret, jwt_str)
   if not success then
     return {
       valid=false,
       verified=false,
-      reason=ret[str_const.reason] or "invalid jwt string"
+      reason=ret[str_const.reason] or str_const.invalid_jwt
     }
   end
 
@@ -416,7 +419,7 @@ end
 
 --@function validate_exp_nbf - validate expiry and not valid before
 --@param jwt_obj
-local function validate_exp_nbf(jwt_obj)
+local function validate_exp_nbf(jwt_obj, leeway)
   local exp = jwt_obj[str_const.payload][str_const.exp]
   local nbf = jwt_obj[str_const.payload][str_const.nbf]
 
@@ -437,7 +440,7 @@ end
 --@param secret
 --@param jwt object
 --@return owt object with reason whether verified or not
-local function verify_jwe_obj(secret, jwt_obj)  
+local function verify_jwe_obj(secret, jwt_obj, leeway)
   local key, mac_key, enc_key = derive_keys(jwt_obj.header.enc, jwt_obj.internal.key)
   local encoded_header = jwt_obj.internal.encoded_header
 
@@ -454,7 +457,7 @@ local function verify_jwe_obj(secret, jwt_obj)
   jwt_obj.signature = nil
 
   if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj)
+    validate_exp_nbf(jwt_obj, leeway)
   end
 
   if not jwt_obj[str_const.reason] then
@@ -476,7 +479,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   end
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
-    return verify_jwe_obj(secret, jwt_obj)
+    return verify_jwe_obj(secret, jwt_obj, leeway)
   end
 
   local alg = jwt_obj[str_const.header][str_const.alg]
@@ -503,7 +506,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   elseif alg == str_const.RS256 then
     local cert
     if self.trusted_certs_file ~= nil then
-      local err, x5c = jwt_obj[str_const.header][str_const.x5c]
+      local x5c = jwt_obj[str_const.header][str_const.x5c]
       if not x5c or not x5c[1] then
         jwt_obj[str_const.reason] = "Unsupported RS256 key model"
         return jwt_obj
@@ -561,7 +564,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   end
 
   if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj)
+    validate_exp_nbf(jwt_obj, leeway)
   end
 
   if not jwt_obj[str_const.reason] then
@@ -574,8 +577,7 @@ end
 
 
 function _M.verify(self, secret, jwt_str, leeway, encrypted)
-
-  jwt_obj = _M.load_jwt(self, secret, jwt_str)
+  jwt_obj = _M.load_jwt(self, jwt_str, secret)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
   end
