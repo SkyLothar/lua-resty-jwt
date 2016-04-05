@@ -3,6 +3,8 @@ Name
 
 lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01.html) for ngx_lua and LuaJIT
 
+[![Build Status](https://img.shields.io/travis/SkyLothar/lua-resty-jwt.svg?style=flat-square)](https://travis-ci.org/SkyLothar/lua-resty-jwt)
+
 version
 =======
 
