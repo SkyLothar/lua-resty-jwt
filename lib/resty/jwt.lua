@@ -73,6 +73,24 @@ local function split_string(str, delim, maxNb)
   return result
 end
 
+-- @function is nil or positive number
+-- @return true if param is nil or > 0; false otherwise
+local function is_nil_or_positive_number(arg_value)
+    if arg_value == nil then
+        return true
+    end
+    
+    if type(arg_value) ~= str_const.number then
+        return false
+    end
+    
+    if arg_value < 0 then
+        return false
+    end
+    
+    return true
+end
+
 --@function get the row part
 --@param part_name
 --@param jwt_obj
@@ -630,6 +648,10 @@ end
 
 
 function _M.verify(self, secret, jwt_str, leeway, encrypted)
+  if not is_nil_or_positive_number(leeway) then
+    error("'leeway' is expected to be a positive number of seconds.")
+  end
+
   jwt_obj = _M.load_jwt(self, jwt_str, secret)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
