@@ -529,3 +529,103 @@ GET /t
 --- error_log
 'leeway' is expected to be a positive number of seconds.
 [error]
+
+
+=== TEST 23: JWT simple with invalid exp ("exp": "17") and default strict validation
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIiLCJleHAiOiIxNyJ9" ..
+                ".6gWBliIuNT1qF_RhD1ymI-zRyN38zGme0dHvYkOFgxM"
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
+--- no_error_log
+[error]
+
+
+=== TEST 24: JWT simple with invalid exp ("exp": -17) and default strict validation
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIiLCJleHAiOi0xN30" ..
+                ".Jd3_eeMBJeWAeyke5SbXD3TecVPpci7lNLWGze9OP9o"
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
+--- no_error_log
+[error]
+
+
+=== TEST 25: JWT simple with invalid nbf ("nbf": "17") and default strict validation
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIiLCJuYmYiOiIxNyJ9" ..
+                ".kYzPvYDRiW37rsdYNfFd57KDBuZpm1loCRIJSUlQjbE"
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+jwt 'nbf' claimed is malformed. Expected to be a positive numeric value.
+--- no_error_log
+[error]
+
+
+=== TEST 26: JWT simple with invalid nbf ("nbf": -17) and default strict validation
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIiLCJuYmYiOi0xN30" ..
+                ".jNUyAIYISmDcemGO3gE17byPZ_ZO-WZxaMt59UNslPc"
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+jwt 'nbf' claimed is malformed. Expected to be a positive numeric value.
+--- no_error_log
+[error]

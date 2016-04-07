@@ -59,6 +59,7 @@ local str_const = {
   verified = "verified",
   number = "number",
   funct = "function",
+  boolean = "boolean",
   valid = "valid",
   internal_error = "internal error",
   everything_awesome = "everything is awesome~ :p"
@@ -351,6 +352,18 @@ end
 
 _M.x5u_content_retriever = nil
 
+--- Loosen the jwt validation process
+--
+-- @param is_active - true to make the validation more lax; false otherwise.
+function _M.loose_validation(self, is_active)
+  if type(is_active) ~= str_const.boolean then
+    error("'is_active' is expected to be a boolean")
+  end
+  self.loose_validation = is_active
+end
+
+_M.loose_validation = false
+
 --@function sign jwe payload
 --@param secret key : if used pre-shared or RSA key
 --@param  jwe payload
@@ -453,28 +466,51 @@ end
 
 --@function validate_exp_nbf - validate expiry and not valid before
 --@param jwt_obj
-local function validate_exp_nbf(jwt_obj, leeway)
+local function validate_exp_nbf(jwt_obj, is_validation_loose, leeway)
+  if jwt_obj[str_const.reason] ~= nil then
+    return
+  end
+
   local exp = jwt_obj[str_const.payload][str_const.exp]
   local nbf = jwt_obj[str_const.payload][str_const.nbf]
 
-  if (exp ~= nil or nbf ~= nil ) and not jwt_obj[str_const.reason] then
-    leeway = leeway or 0
-    local now = ngx.now()
+  leeway = leeway or 0
+  local now = ngx.now()
 
-    if type(exp) == str_const.number and exp < (now - leeway) then
+  if exp ~= nil and not is_validation_loose then
+    if (not is_nil_or_positive_number(exp)) then
+      jwt_obj[str_const.reason] = "jwt 'exp' claimed is malformed. "..
+      "Expected to be a positive numeric value."
+      return
+    end
+
+    if exp < (now - leeway) then
       jwt_obj[str_const.reason] = "jwt token expired at: " ..
       ngx.http_time(exp)
-    elseif type(nbf) == str_const.number and nbf > (now + leeway) then
+      return
+    end
+  end
+
+  if nbf ~= nil and not is_validation_loose then
+    if (not is_nil_or_positive_number(nbf)) then
+      jwt_obj[str_const.reason] = "jwt 'nbf' claimed is malformed. "..
+      "Expected to be a positive numeric value."
+      return
+    end
+
+    if nbf > (now + leeway) then
       jwt_obj[str_const.reason] = "jwt token not valid until: " ..
       ngx.http_time(nbf)
+      return
     end
   end
 end
+
 --@function verify jwe object
 --@param secret
 --@param jwt object
 --@return jwt object with reason whether verified or not
-local function verify_jwe_obj(secret, jwt_obj, leeway)
+local function verify_jwe_obj(secret, jwt_obj, is_validation_loose, leeway)
   local key, mac_key, enc_key = derive_keys(jwt_obj.header.enc, jwt_obj.internal.key)
   local encoded_header = jwt_obj.internal.encoded_header
 
@@ -491,7 +527,7 @@ local function verify_jwe_obj(secret, jwt_obj, leeway)
   jwt_obj.signature = nil
 
   if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj, leeway)
+    validate_exp_nbf(jwt_obj, is_validation_loose, leeway)
   end
 
   if not jwt_obj[str_const.reason] then
@@ -561,7 +597,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   end
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
-    return verify_jwe_obj(secret, jwt_obj, leeway)
+    return verify_jwe_obj(secret, jwt_obj, self.loose_validation, leeway)
   end
 
   local alg = jwt_obj[str_const.header][str_const.alg]
@@ -636,7 +672,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   end
 
   if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj, leeway)
+    validate_exp_nbf(jwt_obj, self.loose_validation, leeway)
   end
 
   if not jwt_obj[str_const.reason] then
