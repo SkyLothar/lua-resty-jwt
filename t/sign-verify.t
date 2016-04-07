@@ -479,3 +479,53 @@ everything is awesome~ :p
 bar
 --- no_error_log
 [error]
+
+
+=== TEST 21: JWT simple with invalid negative leeway
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIifQ" ..
+                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
+                -1
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+'leeway' is expected to be a positive number of seconds.
+[error]
+
+
+=== TEST 22: JWT simple with invalid alpha leeway
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIifQ" ..
+                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
+                "boom ?"
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+'leeway' is expected to be a positive number of seconds.
+[error]
