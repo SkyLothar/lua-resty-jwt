@@ -80,15 +80,15 @@ local function is_nil_or_positive_number(arg_value)
     if arg_value == nil then
         return true
     end
-    
+
     if type(arg_value) ~= str_const.number then
         return false
     end
-    
+
     if arg_value < 0 then
         return false
     end
-    
+
     return true
 end
 
