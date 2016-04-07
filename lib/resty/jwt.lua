@@ -58,6 +58,7 @@ local str_const = {
   reason = "reason",
   verified = "verified",
   number = "number",
+  funct = "function",
   valid = "valid",
   internal_error = "internal error",
   everything_awesome = "everything is awesome~ :p"
@@ -342,7 +343,7 @@ _M.alg_whitelist = nil
 --                             of the 'x5u' attribute in a jwt and return the
 --                             matching certificate.
 function _M.set_x5u_content_retriever(self, retriever_function)
-  if type(retriever_function) ~= "function" then
+  if type(retriever_function) ~= str_const.funct then
     error("'retriever_function' is expected to be a function")
   end
   self.x5u_content_retriever = retriever_function
