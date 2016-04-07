@@ -362,7 +362,7 @@ local function sign_jwe(secret_key, jwt_obj)
   local json_payload = cjson_encode(jwt_obj.payload)
   local cipher_text, iv, err = encrypt_payload( key, json_payload, jwt_obj.header.enc )
   if err then
-    error({reason="error while encryptiping payload. Error: " .. err})
+    error({reason="error while encrypting payload. Error: " .. err})
   end
   local alg = jwt_obj.header.alg
 
