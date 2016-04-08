@@ -791,13 +791,13 @@ local function normalize_validation_options(options)
 end
 
 function _M.verify(self, secret, jwt_str, validation_options)
-  local opt = normalize_validation_options(validation_options)
+  local opts = normalize_validation_options(validation_options)
 
-  jwt_obj = _M.load_jwt(self, jwt_str, secret, opt)
+  jwt_obj = _M.load_jwt(self, jwt_str, secret, opts)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
   end
-  return  _M.verify_jwt_obj(self, secret, jwt_obj, opt)
+  return  _M.verify_jwt_obj(self, secret, jwt_obj, opts)
 
 end
 
