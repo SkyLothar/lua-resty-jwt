@@ -655,6 +655,9 @@ local function extract_certificate(jwt_obj, x5u_content_retriever)
 end
 
 local function normalize_validation_options(options)
+  if options == nil then
+    return { }
+  end
 
   if type(options) ~= str_const.table then
     error("'options' is expected to be a table")
