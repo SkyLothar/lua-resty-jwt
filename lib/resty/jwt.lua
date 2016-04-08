@@ -655,16 +655,9 @@ local function extract_certificate(jwt_obj, x5u_content_retriever)
 end
 
 local function normalize_validation_options(options)
-  if options == nil then
-    return { __normalized__ = 1 }
-  end
 
   if type(options) ~= str_const.table then
     error("'options' is expected to be a table")
-  end
-
-  if options["__normalized__"] ~= nil then
-    return options
   end
 
   local known_options = { }
@@ -690,7 +683,6 @@ local function normalize_validation_options(options)
     error(string.format("'%s' validation option is expected to be a positive number of seconds.", str_const.validity_grace_period))
   end
 
-  options["__normalized__"] = 1
   return options
 end
 
@@ -800,13 +792,11 @@ end
 
 
 function _M.verify(self, secret, jwt_str, validation_options)
-  local opts = normalize_validation_options(validation_options)
-
   jwt_obj = _M.load_jwt(self, jwt_str, secret)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
   end
-  return  _M.verify_jwt_obj(self, secret, jwt_obj, opts)
+  return  _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
 
 end
 
