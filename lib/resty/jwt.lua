@@ -479,7 +479,7 @@ end
 --@function load jwt
 --@param jwt string token
 --@param secret
-function _M.load_jwt(self, jwt_str, secret, validation_options)
+function _M.load_jwt(self, jwt_str, secret)
   local success, ret = pcall(parse, secret, jwt_str)
   if not success then
     return {
@@ -654,6 +654,46 @@ local function extract_certificate(jwt_obj, x5u_content_retriever)
   -- TODO - Implement jwk and kid based models...
 end
 
+local function normalize_validation_options(options)
+  if options == nil then
+    return { __normalized__ = 1 }
+  end
+
+  if type(options) ~= str_const.table then
+    error("'options' is expected to be a table")
+  end
+
+  if options["__normalized__"] ~= nil then
+    return options
+  end
+
+  local known_options = { }
+  known_options[str_const.require_iss_claim]=1
+  known_options[str_const.valid_issuers]=1
+  known_options[str_const.validity_grace_period]=1
+
+  for k in pairs(options) do
+    if known_options[k] == nil then
+      error(string.format("'%s' isn't a valid option name", k))
+    end
+  end
+
+  if not is_nil_or_boolean(options[str_const.require_iss_claim]) then
+    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_iss_claim))
+  end
+
+  ensure_is_table_of_strings_or_nil(
+      string.format("'%s' validation option", str_const.valid_issuers),
+      options[str_const.valid_issuers])
+
+  if not is_nil_or_positive_number(options[str_const.validity_grace_period]) then
+    error(string.format("'%s' validation option is expected to be a positive number of seconds.", str_const.validity_grace_period))
+  end
+
+  options["__normalized__"] = 1
+  return options
+end
+
 --@function verify jwt object
 --@param secret
 --@param jwt_object
@@ -663,9 +703,12 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
   if not jwt_obj.valid then
     return jwt_obj
   end
+
+  local opts = normalize_validation_options(validation_options)
+
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
-    return verify_jwe_obj(secret, jwt_obj, validation_options)
+    return verify_jwe_obj(secret, jwt_obj, opts)
   end
 
   local alg = jwt_obj[str_const.header][str_const.alg]
@@ -740,11 +783,11 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
   end
 
   if not jwt_obj[str_const.reason] then
-    validate_iss(jwt_obj, validation_options)
+    validate_iss(jwt_obj, opts)
   end
 
   if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj, validation_options)
+    validate_exp_nbf(jwt_obj, opts)
   end
 
   if not jwt_obj[str_const.reason] then
@@ -755,45 +798,11 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
 
 end
 
-local function normalize_validation_options(options)
-  if options == nil then
-    return { }
-  end
-
-  if type(options) ~= str_const.table then
-    error("'options' is expected to be a table")
-  end
-
-  local known_options = { }
-  known_options[str_const.require_iss_claim]=1
-  known_options[str_const.valid_issuers]=1
-  known_options[str_const.validity_grace_period]=1
-
-  for k in pairs(options) do
-    if known_options[k] == nil then
-      error(string.format("'%s' isn't a valid option name", k))
-    end
-  end
-
-  if not is_nil_or_boolean(options[str_const.require_iss_claim]) then
-    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_iss_claim))
-  end
-
-  ensure_is_table_of_strings_or_nil(
-      string.format("'%s' validation option", str_const.valid_issuers),
-      options[str_const.valid_issuers])
-
-  if not is_nil_or_positive_number(options[str_const.validity_grace_period]) then
-    error(string.format("'%s' validation option is expected to be a positive number of seconds.", str_const.validity_grace_period))
-  end
-
-  return options
-end
 
 function _M.verify(self, secret, jwt_str, validation_options)
   local opts = normalize_validation_options(validation_options)
 
-  jwt_obj = _M.load_jwt(self, jwt_str, secret, opts)
+  jwt_obj = _M.load_jwt(self, jwt_str, secret)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
   end
