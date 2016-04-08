@@ -137,7 +137,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 6: JWT simple with default leeway and valid exp
+=== TEST 6: JWT simple with default validity grace period and valid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -162,7 +162,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 7: JWT simple with default leeway and invalid exp
+=== TEST 7: JWT simple with default validity grace period and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -187,7 +187,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 8: JWT simple with default leeway and valid nbf
+=== TEST 8: JWT simple with default validity grace period and valid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -212,7 +212,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 9: JWT simple with default leeway and invalid nbf
+=== TEST 9: JWT simple with default validity grace period and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -237,7 +237,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
 [error]
 
 
-=== TEST 10: JWT simple with super large leeway and invalid nbf
+=== TEST 10: JWT simple with super large validity grace period and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -248,7 +248,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
                 ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
-                9999999999
+                { validity_grace_period = 9999999999 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -420,8 +420,7 @@ bar
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
-                9999999999
+                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -480,58 +479,7 @@ bar
 --- no_error_log
 [error]
 
-
-=== TEST 21: JWT simple with invalid negative leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIifQ" ..
-                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
-                -1
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- error_code: 500
---- error_log
-'leeway' is expected to be a positive number of seconds.
-[error]
-
-
-=== TEST 22: JWT simple with invalid alpha leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIifQ" ..
-                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
-                "boom ?"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- error_code: 500
---- error_log
-'leeway' is expected to be a positive number of seconds.
-[error]
-
-
-=== TEST 23: JWT simple with invalid exp ("exp": "17") and default strict validation
+=== TEST 21: JWT simple with invalid exp ("exp": "17") and default strict validation
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -551,12 +499,12 @@ GET /t
 GET /t
 --- response_body
 false
-jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
+jwt 'exp' claim is malformed. Expected to be a positive numeric value.
 --- no_error_log
 [error]
 
 
-=== TEST 24: JWT simple with invalid exp ("exp": -17) and default strict validation
+=== TEST 22: JWT simple with invalid exp ("exp": -17) and default strict validation
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -576,12 +524,12 @@ jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
 GET /t
 --- response_body
 false
-jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
+jwt 'exp' claim is malformed. Expected to be a positive numeric value.
 --- no_error_log
 [error]
 
 
-=== TEST 25: JWT simple with invalid nbf ("nbf": "17") and default strict validation
+=== TEST 23: JWT simple with invalid nbf ("nbf": "17") and default strict validation
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -601,12 +549,12 @@ jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
 GET /t
 --- response_body
 false
-jwt 'nbf' claimed is malformed. Expected to be a positive numeric value.
+jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 --- no_error_log
 [error]
 
 
-=== TEST 26: JWT simple with invalid nbf ("nbf": -17) and default strict validation
+=== TEST 24: JWT simple with invalid nbf ("nbf": -17) and default strict validation
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -626,6 +574,56 @@ jwt 'nbf' claimed is malformed. Expected to be a positive numeric value.
 GET /t
 --- response_body
 false
-jwt 'nbf' claimed is malformed. Expected to be a positive numeric value.
+jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 --- no_error_log
+[error]
+
+
+=== TEST 25: JWT simple with invalid negative validity grace period
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIifQ" ..
+                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
+                { validity_grace_period = -1 }
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+'validity_grace_period' validation option is expected to be a positive number of seconds.
+[error]
+
+
+=== TEST 26: JWT simple with invalid alpha validity grace period
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
+                ".eyJmb28iOiJiYXIifQ" ..
+                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
+                { validity_grace_period = "boom ?" }
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+'validity_grace_period' validation option is expected to be a positive number of seconds.
 [error]

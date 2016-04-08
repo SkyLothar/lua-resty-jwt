@@ -45,6 +45,7 @@ local str_const = {
   enc = "enc",
   exp = "exp",
   nbf = "nbf",
+  iss = "iss",
   AES = "AES",
   cbc = "cbc",
   x5c = "x5c",
@@ -58,9 +59,14 @@ local str_const = {
   reason = "reason",
   verified = "verified",
   number = "number",
+  string = "string",
   funct = "function",
   boolean = "boolean",
+  table = "table",
   valid = "valid",
+  valid_issuers = "valid_issuers",
+  require_iss_claim = "require_iss_claim",
+  validity_grace_period = "validity_grace_period",
   internal_error = "internal error",
   everything_awesome = "everything is awesome~ :p"
 }
@@ -91,6 +97,43 @@ local function is_nil_or_positive_number(arg_value)
     end
 
     return true
+end
+
+
+-- @function is nil or boolean
+-- @return true if param is nil or > 0; false otherwise
+local function is_nil_or_boolean(arg_value)
+    if arg_value == nil then
+        return true
+    end
+
+    if type(arg_value) ~= str_const.boolean then
+        return false
+    end
+
+    return true
+end
+
+-- @function ensure is table of strings or nil
+local function ensure_is_table_of_strings_or_nil(arg_name, arg_value)
+  if arg_value == nil then
+    return
+  end
+
+  if (type(arg_value) ~= str_const.table) then
+    error(string.format("%s is expected to be a table", arg_name))
+  end
+
+  if next(arg_value) == nil then
+    error(string.format("%s is expected to be a non empty table", arg_name))
+  end
+
+  for i,v in ipairs(arg_value) do
+    if type(v) ~= str_const.string then
+       error(string.format("%s is expected to be a table only containing strings", arg_name))
+    end
+  end
+
 end
 
 --@function get the row part
@@ -352,18 +395,6 @@ end
 
 _M.x5u_content_retriever = nil
 
---- Loosen the jwt validation process
---
--- @param is_active - true to make the validation more lax; false otherwise.
-function _M.loose_validation(self, is_active)
-  if type(is_active) ~= str_const.boolean then
-    error("'is_active' is expected to be a boolean")
-  end
-  self.loose_validation = is_active
-end
-
-_M.loose_validation = false
-
 --@function sign jwe payload
 --@param secret key : if used pre-shared or RSA key
 --@param  jwe payload
@@ -448,7 +479,7 @@ end
 --@function load jwt
 --@param jwt string token
 --@param secret
-function _M.load_jwt(self, jwt_str, secret)
+function _M.load_jwt(self, jwt_str, secret, validation_options)
   local success, ret = pcall(parse, secret, jwt_str)
   if not success then
     return {
@@ -464,9 +495,9 @@ function _M.load_jwt(self, jwt_str, secret)
   return jwt_obj
 end
 
---@function validate_exp_nbf - validate expiry and not valid before
---@param jwt_obj
-local function validate_exp_nbf(jwt_obj, is_validation_loose, leeway)
+--@function validate exp nbf claims - validate expiry and not valid before
+--@param jwt_obj, validation_options
+local function validate_exp_nbf(jwt_obj, validation_options)
   if jwt_obj[str_const.reason] ~= nil then
     return
   end
@@ -474,12 +505,12 @@ local function validate_exp_nbf(jwt_obj, is_validation_loose, leeway)
   local exp = jwt_obj[str_const.payload][str_const.exp]
   local nbf = jwt_obj[str_const.payload][str_const.nbf]
 
-  leeway = leeway or 0
+  leeway = validation_options[str_const.validity_grace_period] or 0
   local now = ngx.now()
 
-  if exp ~= nil and not is_validation_loose then
+  if exp ~= nil then
     if (not is_nil_or_positive_number(exp)) then
-      jwt_obj[str_const.reason] = "jwt 'exp' claimed is malformed. "..
+      jwt_obj[str_const.reason] = "jwt 'exp' claim is malformed. "..
       "Expected to be a positive numeric value."
       return
     end
@@ -491,9 +522,9 @@ local function validate_exp_nbf(jwt_obj, is_validation_loose, leeway)
     end
   end
 
-  if nbf ~= nil and not is_validation_loose then
+  if nbf ~= nil then
     if (not is_nil_or_positive_number(nbf)) then
-      jwt_obj[str_const.reason] = "jwt 'nbf' claimed is malformed. "..
+      jwt_obj[str_const.reason] = "jwt 'nbf' claim is malformed. "..
       "Expected to be a positive numeric value."
       return
     end
@@ -506,11 +537,44 @@ local function validate_exp_nbf(jwt_obj, is_validation_loose, leeway)
   end
 end
 
+--@function validate issuers - ensure issuer belong to a whitelist
+--@param jwt_obj, validation_options
+local function validate_iss(jwt_obj, validation_options)
+  if jwt_obj[str_const.reason] ~= nil then
+    return
+  end
+
+  local issuer = jwt_obj[str_const.payload][str_const.iss]
+
+  if iss == nil then
+    if (validation_options[str_const.require_iss_claim] == nil or validation_options[str_const.require_iss_claim] == false) then
+      return
+    end
+
+    jwt_obj[str_const.reason] = "jwt is lacking the 'iss' claim."
+    return
+  end
+
+  local valid_issuers = validation_options[str_const.valid_issuers]
+
+  if valid_issuers == nil then
+    return
+  end
+
+  for k in pairs(valid_issuers) do
+    if iss == k then
+       return
+    end
+  end
+
+  jwt_obj[str_const.reason] = "jwt 'iss' claim doesn't belong to the list of valid issuers."
+end
+
 --@function verify jwe object
 --@param secret
 --@param jwt object
 --@return jwt object with reason whether verified or not
-local function verify_jwe_obj(secret, jwt_obj, is_validation_loose, leeway)
+local function verify_jwe_obj(secret, jwt_obj, validation_options)
   local key, mac_key, enc_key = derive_keys(jwt_obj.header.enc, jwt_obj.internal.key)
   local encoded_header = jwt_obj.internal.encoded_header
 
@@ -527,7 +591,11 @@ local function verify_jwe_obj(secret, jwt_obj, is_validation_loose, leeway)
   jwt_obj.signature = nil
 
   if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj, is_validation_loose, leeway)
+    validate_iss(jwt_obj, validation_options)
+  end
+
+  if not jwt_obj[str_const.reason] then
+    validate_exp_nbf(jwt_obj, validation_options)
   end
 
   if not jwt_obj[str_const.reason] then
@@ -591,13 +659,13 @@ end
 --@param jwt_object
 --@leeway
 --@return verified jwt payload or jwt object with error code
-function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
+function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
   if not jwt_obj.valid then
     return jwt_obj
   end
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
-    return verify_jwe_obj(secret, jwt_obj, self.loose_validation, leeway)
+    return verify_jwe_obj(secret, jwt_obj, validation_options)
   end
 
   local alg = jwt_obj[str_const.header][str_const.alg]
@@ -672,7 +740,11 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
   end
 
   if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj, self.loose_validation, leeway)
+    validate_iss(jwt_obj, validation_options)
+  end
+
+  if not jwt_obj[str_const.reason] then
+    validate_exp_nbf(jwt_obj, validation_options)
   end
 
   if not jwt_obj[str_const.reason] then
@@ -683,17 +755,49 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
 
 end
 
-
-function _M.verify(self, secret, jwt_str, leeway, encrypted)
-  if not is_nil_or_positive_number(leeway) then
-    error("'leeway' is expected to be a positive number of seconds.")
+local function normalize_validation_options(options)
+  if options == nil then
+    return { }
   end
 
-  jwt_obj = _M.load_jwt(self, jwt_str, secret)
+  if type(options) ~= str_const.table then
+    error("'options' is expected to be a table")
+  end
+
+  local known_options = { }
+  known_options[str_const.require_iss_claim]=1
+  known_options[str_const.valid_issuers]=1
+  known_options[str_const.validity_grace_period]=1
+
+  for k in pairs(options) do
+    if known_options[k] == nil then
+      error(string.format("'%s' isn't a valid option name", k))
+    end
+  end
+
+  if not is_nil_or_boolean(options[str_const.require_iss_claim]) then
+    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_iss_claim))
+  end
+
+  ensure_is_table_of_strings_or_nil(
+      string.format("'%s' validation option", str_const.valid_issuers),
+      options[str_const.valid_issuers])
+
+  if not is_nil_or_positive_number(options[str_const.validity_grace_period]) then
+    error(string.format("'%s' validation option is expected to be a positive number of seconds.", str_const.validity_grace_period))
+  end
+
+  return options
+end
+
+function _M.verify(self, secret, jwt_str, validation_options)
+  local opt = normalize_validation_options(validation_options)
+
+  jwt_obj = _M.load_jwt(self, jwt_str, secret, opt)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
   end
-  return  _M.verify_jwt_obj(self, secret, jwt_obj, leeway)
+  return  _M.verify_jwt_obj(self, secret, jwt_obj, opt)
 
 end
 
