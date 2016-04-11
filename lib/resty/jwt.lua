@@ -65,8 +65,7 @@ local str_const = {
   table = "table",
   valid = "valid",
   valid_issuers = "valid_issuers",
-  validate_lifetime = "validate_lifetime",
-  validity_grace_period = "validity_grace_period",
+  lifetime_grace_period = "lifetime_grace_period",
   require_nbf_claim = "require_nbf_claim",
   require_exp_claim = "require_exp_claim",
   internal_error = "internal error",
@@ -85,7 +84,11 @@ end
 
 -- @function is nil or positive number
 -- @return true if param is nil or > 0; false otherwise
-local function is_nil_or_positive_number(arg_value)
+local function is_nil_or_positive_number(arg_value, allow_zero)
+    if allow_zero == nil then
+        allow_zero = false
+    end
+
     if arg_value == nil then
         return true
     end
@@ -95,6 +98,10 @@ local function is_nil_or_positive_number(arg_value)
     end
 
     if arg_value < 0 then
+        return false
+    end
+
+    if allow_zero == false and arg_value == 0 then
         return false
     end
 
@@ -499,54 +506,38 @@ end
 
 --@function validate exp nbf claims - validate expiry and not valid before
 --@param jwt_obj, validation_options
-local function validate_exp_nbf(jwt_obj, validation_options)
-  if jwt_obj[str_const.reason] ~= nil then
-    return
-  end
-
+local function validate_exp_nbf(jwt_obj, leeway, require_nbf_claim, require_exp_claim)
   local exp = jwt_obj[str_const.payload][str_const.exp]
   local nbf = jwt_obj[str_const.payload][str_const.nbf]
 
-  leeway = validation_options[str_const.validity_grace_period] or 0
+  leeway = leeway or 0
   local now = ngx.now()
 
-  local require_exp_claim = validation_options[str_const.require_exp_claim]
   if exp == nil and require_exp_claim == true then
-    jwt_obj[str_const.reason] = "jwt is lacking the 'exp' claim."
-    return
+    error("jwt is lacking the 'exp' claim.")
   end
 
   if exp ~= nil then
     if (not is_nil_or_positive_number(exp)) then
-      jwt_obj[str_const.reason] = "jwt 'exp' claim is malformed. "..
-      "Expected to be a positive numeric value."
-      return
+      error("jwt 'exp' claim is malformed. Expected to be a positive numeric value.")
     end
 
     if exp < (now - leeway) then
-      jwt_obj[str_const.reason] = "jwt token expired at: " ..
-      ngx.http_time(exp)
-      return
+      error("jwt token expired at: " .. ngx.http_time(exp)
     end
   end
 
-  local require_nbf_claim = validation_options[str_const.require_nbf_claim]
   if nbf == nil and require_nbf_claim == true then
-    jwt_obj[str_const.reason] = "jwt is lacking the 'nbf' claim."
-    return
+    error("jwt is lacking the 'nbf' claim.")
   end
 
   if nbf ~= nil then
     if (not is_nil_or_positive_number(nbf)) then
-      jwt_obj[str_const.reason] = "jwt 'nbf' claim is malformed. "..
-      "Expected to be a positive numeric value."
-      return
+      error("jwt 'nbf' claim is malformed. Expected to be a positive numeric value.")
     end
 
     if nbf > (now + leeway) then
-      jwt_obj[str_const.reason] = "jwt token not valid until: " ..
-      ngx.http_time(nbf)
-      return
+      error("jwt token not valid until: " .. ngx.http_time(nbf))
     end
   end
 end
@@ -554,10 +545,6 @@ end
 --@function validate issuers - ensure issuer belong to a whitelist
 --@param jwt_obj, validation_options
 local function validate_iss(jwt_obj, validation_options)
-  if jwt_obj[str_const.reason] ~= nil then
-    return
-  end
-
   local valid_issuers = validation_options[str_const.valid_issuers]
 
   if valid_issuers == nil then
@@ -567,14 +554,11 @@ local function validate_iss(jwt_obj, validation_options)
   local issuer = jwt_obj[str_const.payload][str_const.iss]
 
   if issuer == nil then
-    jwt_obj[str_const.reason] = "jwt is lacking the 'iss' claim."
-    return
+    error("jwt is lacking the 'iss' claim.")
   end
 
   if type(issuer) ~= str_const.string then
-    jwt_obj[str_const.reason] = "jwt 'iss' claim is malformed. "..
-      "Expected to be a string."
-    return
+    error("jwt 'iss' claim is malformed. Expected to be a string.")
   end
 
   for valid_issuer in pairs(valid_issuers) do
@@ -583,14 +567,29 @@ local function validate_iss(jwt_obj, validation_options)
     end
   end
 
-  jwt_obj[str_const.reason] = "jwt 'iss' claim doesn't belong to the list of valid issuers."
+  error("jwt 'iss' claim doesn't belong to the list of valid issuers.")
+end
+
+local function apply_validators(jwt_obj, validators)
+  if jwt_obj[str_const.reason] ~= nil then
+    return
+  end
+
+  for i,validator in ipairs(validators) do
+    local success, ret = pcall(validator, jwt_obj)
+
+    if not success then
+        jwt_obj[str_const.reason] = ret
+        return
+    end
+  end
 end
 
 --@function verify jwe object
 --@param secret
 --@param jwt object
 --@return jwt object with reason whether verified or not
-local function verify_jwe_obj(secret, jwt_obj, validation_options)
+local function verify_jwe_obj(secret, jwt_obj, validators)
   local key, mac_key, enc_key = derive_keys(jwt_obj.header.enc, jwt_obj.internal.key)
   local encoded_header = jwt_obj.internal.encoded_header
 
@@ -606,13 +605,7 @@ local function verify_jwe_obj(secret, jwt_obj, validation_options)
   jwt_obj.internal = nil
   jwt_obj.signature = nil
 
-  if not jwt_obj[str_const.reason] then
-    validate_iss(jwt_obj, validation_options)
-  end
-
-  if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj, validation_options)
-  end
+  apply_validators(jwt_obj, validators)
 
   if not jwt_obj[str_const.reason] then
     jwt_obj[str_const.verified] = true
@@ -681,8 +674,7 @@ local function normalize_validation_options(options)
 
   local known_options = { }
   known_options[str_const.valid_issuers]=1
-  known_options[str_const.validate_lifetime]=1
-  known_options[str_const.validity_grace_period]=1
+  known_options[str_const.lifetime_grace_period]=1
   known_options[str_const.require_nbf_claim]=1
   known_options[str_const.require_exp_claim]=1
 
@@ -692,16 +684,18 @@ local function normalize_validation_options(options)
     end
   end
 
+  local validators = { }
+
   ensure_is_table_of_strings_or_nil(
       string.format("'%s' validation option", str_const.valid_issuers),
       options[str_const.valid_issuers])
 
-  if not is_nil_or_boolean(options[str_const.validate_lifetime]) then
-    error(string.format("'%s' validation option is expected to be a boolean.", str_const.validate_lifetime))
+  if options[str_const.valid_issuers] ~= nil then
+    table.insert(validators, validate_iss)
   end
 
-  if not is_nil_or_positive_number(options[str_const.validity_grace_period]) then
-    error(string.format("'%s' validation option is expected to be a positive number of seconds.", str_const.validity_grace_period))
+  if not is_nil_or_positive_number(options[str_const.lifetime_grace_period], true) then
+    error(string.format("'%s' validation option is expected to be a positive (or zero) number of seconds.", str_const.validity_grace_period))
   end
 
   if not is_nil_or_boolean(options[str_const.require_nbf_claim]) then
@@ -712,7 +706,12 @@ local function normalize_validation_options(options)
     error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_exp_claim))
   end
 
-  return options
+  if options[str_const.lifetime_grace_period] ~= nil or options[str_const.require_nbf_claim] ~= nil or options[str_const.require_exp_claim] ~= nil then
+    table.insert(validators, function validate(jwt_obj) validate_lifetime(lifetime_grace_period, require_nbf_claim, require_exp_claim) end)
+    validators[str_const.valid_issuers] = validate_iss
+  end
+
+  return validators
 end
 
 --@function verify jwt object
@@ -725,11 +724,11 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
     return jwt_obj
   end
 
-  local opts = normalize_validation_options(validation_options)
+  local validators = normalize_validation_options(validation_options)
 
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
-    return verify_jwe_obj(secret, jwt_obj, opts)
+    return verify_jwe_obj(secret, jwt_obj, validators)
   end
 
   local alg = jwt_obj[str_const.header][str_const.alg]
@@ -803,13 +802,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
     jwt_obj[str_const.reason] = "Unsupported algorithm " .. alg
   end
 
-  if not jwt_obj[str_const.reason] then
-    validate_iss(jwt_obj, opts)
-  end
-
-  if not jwt_obj[str_const.reason] then
-    validate_exp_nbf(jwt_obj, opts)
-  end
+  apply_validators(jwt_obj, validators)
 
   if not jwt_obj[str_const.reason] then
     jwt_obj[str_const.verified] = true
