@@ -548,7 +548,7 @@ local function validate_iss(jwt_obj, validation_options)
     jwt_obj[str_const.reason] = "jwt 'iss' claim is malformed. "..
       "Expected to be a string."
     return
-  end if
+  end
 
   local issuer = jwt_obj[str_const.payload][str_const.iss]
 
