@@ -672,7 +672,7 @@ end
 
 local function normalize_validation_options(options)
   if options == nil then
-    return { }
+    options = { }
   end
 
   if type(options) ~= str_const.table then
