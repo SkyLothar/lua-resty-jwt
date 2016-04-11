@@ -510,7 +510,7 @@ local function validate_exp_nbf(jwt_obj, validation_options)
 
   local require_exp_claim = validation_options[str_const.require_exp_claim]
   if exp == nil and require_exp_claim == true then
-    jwt_obj[str_const.reason] = "jwt is lacking the 'iss' claim."
+    jwt_obj[str_const.reason] = "jwt is lacking the 'exp' claim."
     return
   end
 
@@ -556,6 +556,12 @@ local function validate_iss(jwt_obj, validation_options)
     return
   end
 
+  local valid_issuers = validation_options[str_const.valid_issuers]
+
+  if valid_issuers == nil then
+    return
+  end
+
   local issuer = jwt_obj[str_const.payload][str_const.iss]
 
   if issuer == nil then
@@ -566,12 +572,6 @@ local function validate_iss(jwt_obj, validation_options)
   if type(issuer) ~= str_const.string then
     jwt_obj[str_const.reason] = "jwt 'iss' claim is malformed. "..
       "Expected to be a string."
-    return
-  end
-
-  local valid_issuers = validation_options[str_const.valid_issuers]
-
-  if valid_issuers == nil then
     return
   end
 
