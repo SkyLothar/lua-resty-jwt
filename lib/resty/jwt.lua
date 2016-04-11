@@ -544,9 +544,15 @@ local function validate_iss(jwt_obj, validation_options)
     return
   end
 
+  if type(issuer) ~= str_const.string then
+    jwt_obj[str_const.reason] = "jwt 'iss' claim is malformed. "..
+      "Expected to be a string."
+    return
+  end if
+
   local issuer = jwt_obj[str_const.payload][str_const.iss]
 
-  if iss == nil then
+  if issuer == nil then
     if (validation_options[str_const.require_iss_claim] == nil or validation_options[str_const.require_iss_claim] == false) then
       return
     end
@@ -561,8 +567,8 @@ local function validate_iss(jwt_obj, validation_options)
     return
   end
 
-  for k in pairs(valid_issuers) do
-    if iss == k then
+  for valid_issuer in pairs(valid_issuers) do
+    if issuer == valid_issuer then
        return
     end
   end
