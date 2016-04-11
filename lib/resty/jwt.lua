@@ -65,8 +65,10 @@ local str_const = {
   table = "table",
   valid = "valid",
   valid_issuers = "valid_issuers",
-  require_iss_claim = "require_iss_claim",
+  validate_lifetime = "validate_lifetime",
   validity_grace_period = "validity_grace_period",
+  require_nbf_claim = "require_nbf_claim",
+  require_exp_claim = "require_exp_claim",
   internal_error = "internal error",
   everything_awesome = "everything is awesome~ :p"
 }
