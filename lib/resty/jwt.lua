@@ -544,9 +544,7 @@ end
 
 --@function validate issuers - ensure issuer belong to a whitelist
 --@param jwt_obj, validation_options
-local function validate_iss(jwt_obj, validation_options)
-  local valid_issuers = validation_options[str_const.valid_issuers]
-
+local function validate_iss(jwt_obj, valid_issuers)
   if valid_issuers == nil then
     return
   end
@@ -691,7 +689,10 @@ local function normalize_validation_options(options)
       options[str_const.valid_issuers])
 
   if options[str_const.valid_issuers] ~= nil then
-    table.insert(validators, validate_iss)
+    table.insert(validators,
+      function (jwt_obj)
+        validate_iss(jwt_obj, options[str_const.valid_issuers])
+      end)
   end
 
   if not is_nil_or_positive_number(options[str_const.lifetime_grace_period], true) then
@@ -707,8 +708,10 @@ local function normalize_validation_options(options)
   end
 
   if options[str_const.lifetime_grace_period] ~= nil or options[str_const.require_nbf_claim] ~= nil or options[str_const.require_exp_claim] ~= nil then
-    table.insert(validators, function validate(jwt_obj) validate_lifetime(options[str_const.lifetime_grace_period], options[str_const.require_nbf_claim], options[str_const.require_exp_claim]) end)
-    validators[str_const.valid_issuers] = validate_iss
+    table.insert(validators,
+      function (jwt_obj)
+        validate_lifetime(jwt_obj, options[str_const.lifetime_grace_period], options[str_const.require_nbf_claim], options[str_const.require_exp_claim])
+      end)
   end
 
   return validators
