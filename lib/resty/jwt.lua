@@ -508,6 +508,12 @@ local function validate_exp_nbf(jwt_obj, validation_options)
   leeway = validation_options[str_const.validity_grace_period] or 0
   local now = ngx.now()
 
+  local require_exp_claim = validation_options[str_const.require_exp_claim]
+  if exp == nil and require_exp_claim == true then
+    jwt_obj[str_const.reason] = "jwt is lacking the 'iss' claim."
+    return
+  end
+
   if exp ~= nil then
     if (not is_nil_or_positive_number(exp)) then
       jwt_obj[str_const.reason] = "jwt 'exp' claim is malformed. "..
@@ -520,6 +526,12 @@ local function validate_exp_nbf(jwt_obj, validation_options)
       ngx.http_time(exp)
       return
     end
+  end
+
+  local require_nbf_claim = validation_options[str_const.require_nbf_claim]
+  if nbf == nil and require_nbf_claim == true then
+    jwt_obj[str_const.reason] = "jwt is lacking the 'nbf' claim."
+    return
   end
 
   if nbf ~= nil then
@@ -544,20 +556,16 @@ local function validate_iss(jwt_obj, validation_options)
     return
   end
 
-  if type(issuer) ~= str_const.string then
-    jwt_obj[str_const.reason] = "jwt 'iss' claim is malformed. "..
-      "Expected to be a string."
-    return
-  end
-
   local issuer = jwt_obj[str_const.payload][str_const.iss]
 
   if issuer == nil then
-    if (validation_options[str_const.require_iss_claim] == nil or validation_options[str_const.require_iss_claim] == false) then
-      return
-    end
-
     jwt_obj[str_const.reason] = "jwt is lacking the 'iss' claim."
+    return
+  end
+
+  if type(issuer) ~= str_const.string then
+    jwt_obj[str_const.reason] = "jwt 'iss' claim is malformed. "..
+      "Expected to be a string."
     return
   end
 
@@ -670,9 +678,11 @@ local function normalize_validation_options(options)
   end
 
   local known_options = { }
-  known_options[str_const.require_iss_claim]=1
   known_options[str_const.valid_issuers]=1
+  known_options[str_const.validate_lifetime]=1
   known_options[str_const.validity_grace_period]=1
+  known_options[str_const.require_nbf_claim]=1
+  known_options[str_const.require_exp_claim]=1
 
   for k in pairs(options) do
     if known_options[k] == nil then
@@ -680,16 +690,24 @@ local function normalize_validation_options(options)
     end
   end
 
-  if not is_nil_or_boolean(options[str_const.require_iss_claim]) then
-    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_iss_claim))
-  end
-
   ensure_is_table_of_strings_or_nil(
       string.format("'%s' validation option", str_const.valid_issuers),
       options[str_const.valid_issuers])
 
+  if not is_nil_or_boolean(options[str_const.validate_lifetime]) then
+    error(string.format("'%s' validation option is expected to be a boolean.", str_const.validate_lifetime))
+  end
+
   if not is_nil_or_positive_number(options[str_const.validity_grace_period]) then
     error(string.format("'%s' validation option is expected to be a positive number of seconds.", str_const.validity_grace_period))
+  end
+
+  if not is_nil_or_boolean(options[str_const.require_nbf_claim]) then
+    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_nbf_claim))
+  end
+
+  if not is_nil_or_boolean(options[str_const.require_exp_claim]) then
+    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_exp_claim))
   end
 
   return options
