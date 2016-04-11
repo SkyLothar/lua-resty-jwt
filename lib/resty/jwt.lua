@@ -506,7 +506,7 @@ end
 
 --@function validate exp nbf claims - validate expiry and not valid before
 --@param jwt_obj, validation_options
-local function validate_exp_nbf(jwt_obj, leeway, require_nbf_claim, require_exp_claim)
+local function validate_lifetime(jwt_obj, leeway, require_nbf_claim, require_exp_claim)
   local exp = jwt_obj[str_const.payload][str_const.exp]
   local nbf = jwt_obj[str_const.payload][str_const.nbf]
 
@@ -523,7 +523,7 @@ local function validate_exp_nbf(jwt_obj, leeway, require_nbf_claim, require_exp_
     end
 
     if exp < (now - leeway) then
-      error("jwt token expired at: " .. ngx.http_time(exp)
+      error("jwt token expired at: " .. ngx.http_time(exp))
     end
   end
 
@@ -579,8 +579,8 @@ local function apply_validators(jwt_obj, validators)
     local success, ret = pcall(validator, jwt_obj)
 
     if not success then
-        jwt_obj[str_const.reason] = ret
-        return
+      jwt_obj[str_const.reason] = ret
+      return
     end
   end
 end
@@ -695,7 +695,7 @@ local function normalize_validation_options(options)
   end
 
   if not is_nil_or_positive_number(options[str_const.lifetime_grace_period], true) then
-    error(string.format("'%s' validation option is expected to be a positive (or zero) number of seconds.", str_const.validity_grace_period))
+    error(string.format("'%s' validation option is expected to be a positive (or zero) number of seconds.", str_const.lifetime_grace_period))
   end
 
   if not is_nil_or_boolean(options[str_const.require_nbf_claim]) then
@@ -707,7 +707,7 @@ local function normalize_validation_options(options)
   end
 
   if options[str_const.lifetime_grace_period] ~= nil or options[str_const.require_nbf_claim] ~= nil or options[str_const.require_exp_claim] ~= nil then
-    table.insert(validators, function validate(jwt_obj) validate_lifetime(lifetime_grace_period, require_nbf_claim, require_exp_claim) end)
+    table.insert(validators, function validate(jwt_obj) validate_lifetime(options[str_const.lifetime_grace_period], options[str_const.require_nbf_claim], options[str_const.require_exp_claim]) end)
     validators[str_const.valid_issuers] = validate_iss
   end
 
