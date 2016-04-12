@@ -510,7 +510,7 @@ local function validate_lifetime(jwt_obj, leeway, require_nbf_claim, require_exp
   local now = ngx.now()
 
   if exp == nil and require_exp_claim == true then
-    error( { reason = "jwt is lacking the 'exp' claim." } )
+    error( { reason = "jwt lacks the 'exp' claim." } )
   end
 
   if exp ~= nil then
@@ -524,7 +524,7 @@ local function validate_lifetime(jwt_obj, leeway, require_nbf_claim, require_exp
   end
 
   if nbf == nil and require_nbf_claim == true then
-    error( { reason = "jwt is lacking the 'nbf' claim." } )
+    error( { reason = "jwt lacks the 'nbf' claim." } )
   end
 
   if nbf ~= nil then
@@ -548,7 +548,7 @@ local function validate_iss(jwt_obj, valid_issuers)
   local issuer = jwt_obj[str_const.payload][str_const.iss]
 
   if issuer == nil then
-    error( { reason = "jwt is lacking the 'iss' claim." } )
+    error( { reason = "jwt lacks the 'iss' claim." } )
   end
 
   if type(issuer) ~= str_const.string then
