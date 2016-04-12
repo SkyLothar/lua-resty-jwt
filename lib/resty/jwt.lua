@@ -102,7 +102,7 @@ end
 
 
 -- @function is nil or boolean
--- @return true if param is nil or > 0; false otherwise
+-- @return true if param is nil or true or false; false otherwise
 local function is_nil_or_boolean(arg_value)
     if arg_value == nil then
         return true
@@ -122,16 +122,16 @@ local function ensure_is_table_of_strings_or_nil(arg_name, arg_value)
   end
 
   if (type(arg_value) ~= str_const.table) then
-    error(string.format("%s is expected to be a table", arg_name))
+    error(string.format("%s is expected to be a table.", arg_name))
   end
 
   if next(arg_value) == nil then
-    error(string.format("%s is expected to be a non empty table", arg_name))
+    error(string.format("%s is expected to be a non empty table.", arg_name))
   end
 
   for i,v in ipairs(arg_value) do
     if type(v) ~= str_const.string then
-       error(string.format("%s is expected to be a table only containing strings", arg_name))
+       error(string.format("%s is expected to be a table only containing strings.", arg_name))
     end
   end
 
