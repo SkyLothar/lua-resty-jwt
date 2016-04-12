@@ -140,7 +140,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 GET /t
 --- error_code: 500
 --- error_log
-'lifetime_grace_period' validation option is expected to be a positive number of seconds.
+'lifetime_grace_period' validation option is expected to be zero or a positive number of seconds.
 [error]
 
 
@@ -165,7 +165,7 @@ GET /t
 GET /t
 --- error_code: 500
 --- error_log
-'lifetime_grace_period' validation option is expected to be a positive number of seconds.
+'lifetime_grace_period' validation option is expected to be zero or a positive number of seconds.
 [error]
 
 
