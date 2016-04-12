@@ -134,7 +134,6 @@ local function ensure_is_table_of_strings_or_nil(arg_name, arg_value)
        error(string.format("%s is expected to be a table only containing strings.", arg_name))
     end
   end
-
 end
 
 --@function get the row part
@@ -504,7 +503,7 @@ function _M.load_jwt(self, jwt_str, secret)
 end
 
 --@function validate exp nbf claims - validate expiry and not valid before
---@param jwt_obj, validation_options
+--@param jwt_obj, leeway, require_nbf_claim, require_exp_claim
 local function validate_lifetime(jwt_obj, leeway, require_nbf_claim, require_exp_claim)
   local exp = jwt_obj[str_const.payload][str_const.exp]
   local nbf = jwt_obj[str_const.payload][str_const.nbf]
@@ -576,7 +575,7 @@ local function apply_validators(jwt_obj, validators)
     return
   end
 
-  for i,validator in ipairs(validators) do
+  for i, validator in ipairs(validators) do
     local success, ret = pcall(validator, jwt_obj)
 
     if not success then
