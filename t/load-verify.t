@@ -204,7 +204,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 10: JWT simple with default validity grace period and valid exp
+=== TEST 10: JWT simple with no validity grace period and valid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -212,7 +212,8 @@ everything is awesome~ :p
             local jwt = require "resty.jwt"
             local jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjk5OTk5OTk5OTl9" ..
-                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw"
+                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw",
+                { lifetime_grace_period = 0 }
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
@@ -231,7 +232,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 11: JWT simple with default validity grace period and invalid exp
+=== TEST 11: JWT simple with no validity grace period and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -243,7 +244,8 @@ everything is awesome~ :p
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 0 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -258,7 +260,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 12: JWT simple with default validity grace period and valid nbf
+=== TEST 12: JWT simple with no validity grace period and valid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -266,7 +268,8 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
             local jwt = require "resty.jwt"
             local jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjB9" ..
-                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo"
+                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo",
+                { lifetime_grace_period = 0 }
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
@@ -285,7 +288,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 13: JWT simple with default validity grace period and invalid nbf
+=== TEST 13: JWT simple with no validity grace period and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -293,7 +296,8 @@ everything is awesome~ :p
             local jwt = require "resty.jwt"
             local jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
+                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
+                { lifetime_grace_period = 0 }
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
@@ -325,7 +329,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
                 "lua-resty-jwt", jwt_obj,
-                { validity_grace_period = 9999999999 }
+                { lifetime_grace_period = 9999999999 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])

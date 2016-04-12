@@ -126,7 +126,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
                 ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
-                { validity_grace_period = -1 }
+                { lifetime_grace_period = -1 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -136,7 +136,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 GET /t
 --- error_code: 500
 --- error_log
-'validity_grace_period' validation option is expected to be a positive number of seconds.
+'lifetime_grace_period' validation option is expected to be a positive number of seconds.
 [error]
 
 
@@ -151,7 +151,7 @@ GET /t
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
                 ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
-                { validity_grace_period = "boom ?" }
+                { lifetime_grace_period = "boom ?" }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -161,11 +161,11 @@ GET /t
 GET /t
 --- error_code: 500
 --- error_log
-'validity_grace_period' validation option is expected to be a positive number of seconds.
+'lifetime_grace_period' validation option is expected to be a positive number of seconds.
 [error]
 
 
-=== TEST 7: JWT simple with default validity grace period and valid exp
+=== TEST 7: JWT simple with no validity grace period and valid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -175,7 +175,8 @@ GET /t
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjk5OTk5OTk5OTl9" ..
-                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw"
+                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -190,7 +191,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 8: JWT simple with default validity grace period and invalid exp
+=== TEST 8: JWT simple with no validity grace period and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -200,7 +201,8 @@ everything is awesome~ :p
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjB9" ..
-                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg"
+                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -215,7 +217,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 9: JWT simple with default validity grace period and valid nbf
+=== TEST 9: JWT simple with no validity grace period and valid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -225,7 +227,8 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjB9" ..
-                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo"
+                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -240,7 +243,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 10: JWT simple with default validity grace period and invalid nbf
+=== TEST 10: JWT simple with no validity grace period and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -250,7 +253,8 @@ everything is awesome~ :p
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
+                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -276,7 +280,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
                 ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
-                { validity_grace_period = 9999999999 }
+                { lifetime_grace_period = 9999999999 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -302,7 +306,7 @@ everything is awesome~ :p
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjB9" ..
                 ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg",
-                { validity_grace_period = 9999999999 }
+                { lifetime_grace_period = 9999999999 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
