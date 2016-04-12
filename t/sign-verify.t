@@ -112,7 +112,7 @@ signature mismatch: signature
 [error]
 
 
-=== TEST 5: JWT simple verify
+=== TEST 5: JWT simple verify with no validation option
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -122,7 +122,8 @@ signature mismatch: signature
                 "lua-resty-jwt",
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
-                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY"
+                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
+                { }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -148,7 +149,7 @@ everything is awesome~ :p
                 "lua-resty-jwt",
                 {
                     header={typ="JWT",alg="HS256"},
-                    payload={foo="bar"}
+                    payload={foo="bar", exp=9999999999}
                 }
             )
 
@@ -187,7 +188,7 @@ bar
                         x5c={
                             ngx.var.pub_key,
                         } },
-                    payload={foo="bar"}
+                    payload={foo="bar", exp=9999999999}
                 }
             )
 
@@ -334,7 +335,7 @@ whitelist unsupported alg: HS256
                         alg="RS256",
                         x5u="https://dummy.com/certs",
                     },
-                    payload={foo="bar"}
+                    payload={foo="bar", exp=9999999999}
                 }
             )
 

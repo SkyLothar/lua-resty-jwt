@@ -179,7 +179,7 @@ signature mismatch: signature
 [error]
 
 
-=== TEST 9: JWT simple verify
+=== TEST 9: JWT simple verify with no validation option
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -190,7 +190,9 @@ signature mismatch: signature
                 ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY"
 
             local jwt_obj = jwt:load_jwt(jwt_str)
-            local verified_obj = jwt:verify_jwt_obj("lua-resty-jwt", jwt_obj)
+            local verified_obj = jwt:verify_jwt_obj(
+                "lua-resty-jwt", jwt_obj, { }
+            )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
         ';
