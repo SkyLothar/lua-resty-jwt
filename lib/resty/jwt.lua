@@ -83,7 +83,7 @@ local function split_string(str, delim, maxNb)
 end
 
 -- @function is nil or positive number
--- @return true if param is nil or > 0; false otherwise
+-- @return true if param is nil or => 0; false otherwise
 local function is_nil_or_positive_number(arg_value, allow_zero)
     if allow_zero == nil then
         allow_zero = false
@@ -98,10 +98,6 @@ local function is_nil_or_positive_number(arg_value, allow_zero)
     end
 
     if arg_value < 0 then
-        return false
-    end
-
-    if allow_zero == false and arg_value == 0 then
         return false
     end
 
@@ -695,8 +691,8 @@ local function normalize_validation_options(options)
       end)
   end
 
-  if not is_nil_or_positive_number(options[str_const.lifetime_grace_period], true) then
-    error(string.format("'%s' validation option is expected to be a positive (or zero) number of seconds.", str_const.lifetime_grace_period))
+  if not is_nil_or_positive_number(options[str_const.lifetime_grace_period]) then
+    error(string.format("'%s' validation option is expected to be zero or a positive number of seconds.", str_const.lifetime_grace_period))
   end
 
   if not is_nil_or_boolean(options[str_const.require_nbf_claim]) then
