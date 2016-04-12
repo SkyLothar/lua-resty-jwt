@@ -24,7 +24,8 @@ __DATA__
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
-                ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY"
+                ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
+                { }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
