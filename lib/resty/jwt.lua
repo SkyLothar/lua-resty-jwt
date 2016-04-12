@@ -555,7 +555,7 @@ local function validate_iss(jwt_obj, valid_issuers)
     error( { reason = "jwt 'iss' claim is malformed. Expected to be a string." } )
   end
 
-  for valid_issuer in pairs(valid_issuers) do
+  for i, valid_issuer in ipairs(valid_issuers) do
     if issuer == valid_issuer then
        return
     end
