@@ -25,7 +25,8 @@ __DATA__
                 "lua-resty-jwt",
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOiIxNyJ9" ..
-                ".6gWBliIuNT1qF_RhD1ymI-zRyN38zGme0dHvYkOFgxM"
+                ".6gWBliIuNT1qF_RhD1ymI-zRyN38zGme0dHvYkOFgxM",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -50,7 +51,8 @@ jwt 'exp' claim is malformed. Expected to be a positive numeric value.
                 "lua-resty-jwt",
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOi0xN30" ..
-                ".Jd3_eeMBJeWAeyke5SbXD3TecVPpci7lNLWGze9OP9o"
+                ".Jd3_eeMBJeWAeyke5SbXD3TecVPpci7lNLWGze9OP9o",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -75,7 +77,8 @@ jwt 'exp' claim is malformed. Expected to be a positive numeric value.
                 "lua-resty-jwt",
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOiIxNyJ9" ..
-                ".kYzPvYDRiW37rsdYNfFd57KDBuZpm1loCRIJSUlQjbE"
+                ".kYzPvYDRiW37rsdYNfFd57KDBuZpm1loCRIJSUlQjbE",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -100,7 +103,8 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
                 "lua-resty-jwt",
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOi0xN30" ..
-                ".jNUyAIYISmDcemGO3gE17byPZ_ZO-WZxaMt59UNslPc"
+                ".jNUyAIYISmDcemGO3gE17byPZ_ZO-WZxaMt59UNslPc",
+                { lifetime_grace_period = 0 }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])

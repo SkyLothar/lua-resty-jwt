@@ -212,12 +212,12 @@ everything is awesome~ :p
             local jwt = require "resty.jwt"
             local jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjk5OTk5OTk5OTl9" ..
-                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw",
-                { lifetime_grace_period = 0 }
+                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw"
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 0 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -268,12 +268,12 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
             local jwt = require "resty.jwt"
             local jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjB9" ..
-                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo",
-                { lifetime_grace_period = 0 }
+                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo"
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 0 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -296,12 +296,12 @@ everything is awesome~ :p
             local jwt = require "resty.jwt"
             local jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
-                { lifetime_grace_period = 0 }
+                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 0 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
