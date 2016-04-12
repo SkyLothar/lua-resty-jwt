@@ -119,7 +119,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 [error]
 
 
-=== TEST 5: JWT with invalid negative validity grace period
+=== TEST 5: JWT with invalid negative lifetime grace period
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -144,7 +144,7 @@ GET /t
 [error]
 
 
-=== TEST 6: JWT with invalid alpha validity grace period
+=== TEST 6: JWT with invalid alpha lifetime grace period
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -169,7 +169,7 @@ GET /t
 [error]
 
 
-=== TEST 7: JWT with no validity grace period and valid exp ("exp": 9999999999)
+=== TEST 7: JWT with no lifetime grace period and valid exp ("exp": 9999999999)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -195,7 +195,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 8: JWT with no validity grace period and invalid exp ("exp": 0)
+=== TEST 8: JWT with no lifetime grace period and invalid exp ("exp": 0)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -221,7 +221,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 9: JWT with no validity grace period and valid nbf ("nbf": 0)
+=== TEST 9: JWT with no lifetime grace period and valid nbf ("nbf": 0)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -247,7 +247,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 10: JWT with no validity grace period and invalid nbf ("nbf": 9999999999)
+=== TEST 10: JWT with no lifetime grace period and invalid nbf ("nbf": 9999999999)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -273,7 +273,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
 [error]
 
 
-=== TEST 11: JWT with super large validity grace period and invalid nbf ("nbf": 9999999999)
+=== TEST 11: JWT with super large lifetime grace period and invalid nbf ("nbf": 9999999999)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -299,7 +299,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 12: JWT with super large validity grace period and invalid exp ("exp": 0)
+=== TEST 12: JWT with super large lifetime grace period and invalid exp ("exp": 0)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -402,7 +402,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 16: JWT without exp nor nbf claim while lifetime validity duration specified
+=== TEST 16: JWT without exp nor nbf claim while lifetime grace period specified
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -428,7 +428,7 @@ jwt lacks both 'exp' and 'nbf' claims.
 [error]
 
 
-=== TEST 17: JWT without exp nor nbf claim while lifetime validity duration specified - Take 2
+=== TEST 17: JWT without exp nor nbf claim while lifetime grace period specified - Take 2
 --- http_config eval: $::HttpConfig
 --- config
     location /t {

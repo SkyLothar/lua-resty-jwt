@@ -381,6 +381,13 @@ end
 
 _M.alg_whitelist = nil
 
+
+--- Returns the list of default validations that will be
+--- applied upon the verification of a jwt.
+function _M.get_default_validation_options(self)
+  return { lifetime_grace_period = 0 }
+end
+
 --- Set a function used to retrieve the content of x5u urls
 --
 -- @param retriever_function - A pointer to a function. This function should be
@@ -657,9 +664,9 @@ local function extract_certificate(jwt_obj, x5u_content_retriever)
   -- TODO - Implement jwk and kid based models...
 end
 
-local function normalize_validation_options(options)
+local function normalize_validation_options(self, options)
   if options == nil then
-    options = { }
+    options = self.get_default_validation_options()
   end
 
   if type(options) ~= str_const.table then
@@ -723,7 +730,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
     return jwt_obj
   end
 
-  local validators = normalize_validation_options(validation_options)
+  local validators = normalize_validation_options(self, validation_options)
 
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
