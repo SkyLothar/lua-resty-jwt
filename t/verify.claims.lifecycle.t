@@ -15,7 +15,7 @@ run_tests();
 __DATA__
 
 
-=== TEST 1: JWT simple with invalid exp ("exp": "17")
+=== TEST 1: JWT with invalid exp ("exp": "17")
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -41,7 +41,7 @@ jwt 'exp' claim is malformed. Expected to be a positive numeric value.
 [error]
 
 
-=== TEST 2: JWT simple with invalid exp ("exp": -17)
+=== TEST 2: JWT with invalid exp ("exp": -17)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -67,7 +67,7 @@ jwt 'exp' claim is malformed. Expected to be a positive numeric value.
 [error]
 
 
-=== TEST 3: JWT simple with invalid nbf ("nbf": "17")
+=== TEST 3: JWT with invalid nbf ("nbf": "17")
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -93,7 +93,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 [error]
 
 
-=== TEST 4: JWT simple with invalid nbf ("nbf": -17)
+=== TEST 4: JWT with invalid nbf ("nbf": -17)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -119,7 +119,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 [error]
 
 
-=== TEST 5: JWT simple with invalid negative validity grace period
+=== TEST 5: JWT with invalid negative validity grace period
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -144,7 +144,7 @@ GET /t
 [error]
 
 
-=== TEST 6: JWT simple with invalid alpha validity grace period
+=== TEST 6: JWT with invalid alpha validity grace period
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -169,7 +169,7 @@ GET /t
 [error]
 
 
-=== TEST 7: JWT simple with no validity grace period and valid exp
+=== TEST 7: JWT with no validity grace period and valid exp ("exp": 9999999999)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -195,7 +195,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 8: JWT simple with no validity grace period and invalid exp
+=== TEST 8: JWT with no validity grace period and invalid exp ("exp": 0)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -221,7 +221,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 9: JWT simple with no validity grace period and valid nbf
+=== TEST 9: JWT with no validity grace period and valid nbf ("nbf": 0)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -247,7 +247,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 10: JWT simple with no validity grace period and invalid nbf
+=== TEST 10: JWT with no validity grace period and invalid nbf ("nbf": 9999999999)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -273,7 +273,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
 [error]
 
 
-=== TEST 11: JWT simple with super large validity grace period and invalid nbf
+=== TEST 11: JWT with super large validity grace period and invalid nbf ("nbf": 9999999999)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -299,7 +299,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 12: JWT simple with super large validity grace period and invalid exp
+=== TEST 12: JWT with super large validity grace period and invalid exp ("exp": 0)
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -321,5 +321,31 @@ GET /t
 --- response_body
 true
 everything is awesome~ :p
+--- no_error_log
+[error]
+
+
+=== TEST 13: JWT without exp nor nbf claim
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                ".eyJmb28iOiJiYXIifQ" ..
+                ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
+                { lifetime_grace_period = 1 }
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+jwt lacks both 'exp' and 'nbf' claims.
 --- no_error_log
 [error]

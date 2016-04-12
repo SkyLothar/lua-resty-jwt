@@ -84,11 +84,7 @@ end
 
 -- @function is nil or positive number
 -- @return true if param is nil or => 0; false otherwise
-local function is_nil_or_positive_number(arg_value, allow_zero)
-    if allow_zero == nil then
-        allow_zero = false
-    end
-
+local function is_nil_or_positive_number(arg_value)
     if arg_value == nil then
         return true
     end
@@ -505,6 +501,10 @@ end
 local function validate_lifetime(jwt_obj, leeway, require_nbf_claim, require_exp_claim)
   local exp = jwt_obj[str_const.payload][str_const.exp]
   local nbf = jwt_obj[str_const.payload][str_const.nbf]
+
+  if (leeway ~= nil and exp == nil and nbf == nil) then
+    error( { reason = "jwt lacks both 'exp' and 'nbf' claims." } )
+  end
 
   leeway = leeway or 0
   local now = ngx.now()
