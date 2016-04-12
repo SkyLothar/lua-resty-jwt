@@ -510,30 +510,30 @@ local function validate_lifetime(jwt_obj, leeway, require_nbf_claim, require_exp
   local now = ngx.now()
 
   if exp == nil and require_exp_claim == true then
-    error("jwt is lacking the 'exp' claim.")
+    error( { reason = "jwt is lacking the 'exp' claim." } )
   end
 
   if exp ~= nil then
     if (not is_nil_or_positive_number(exp)) then
-      error("jwt 'exp' claim is malformed. Expected to be a positive numeric value.")
+      error( { reason = "jwt 'exp' claim is malformed. Expected to be a positive numeric value." } )
     end
 
     if exp < (now - leeway) then
-      error("jwt token expired at: " .. ngx.http_time(exp))
+      error( { reason = "jwt token expired at: " .. ngx.http_time(exp) } )
     end
   end
 
   if nbf == nil and require_nbf_claim == true then
-    error("jwt is lacking the 'nbf' claim.")
+    error( { reason = "jwt is lacking the 'nbf' claim." } )
   end
 
   if nbf ~= nil then
     if (not is_nil_or_positive_number(nbf)) then
-      error("jwt 'nbf' claim is malformed. Expected to be a positive numeric value.")
+      error( { reason = "jwt 'nbf' claim is malformed. Expected to be a positive numeric value." } )
     end
 
     if nbf > (now + leeway) then
-      error("jwt token not valid until: " .. ngx.http_time(nbf))
+      error( { reason = "jwt token not valid until: " .. ngx.http_time(nbf) } )
     end
   end
 end
@@ -548,11 +548,11 @@ local function validate_iss(jwt_obj, valid_issuers)
   local issuer = jwt_obj[str_const.payload][str_const.iss]
 
   if issuer == nil then
-    error("jwt is lacking the 'iss' claim.")
+    error( { reason = "jwt is lacking the 'iss' claim." } )
   end
 
   if type(issuer) ~= str_const.string then
-    error("jwt 'iss' claim is malformed. Expected to be a string.")
+    error( { reason = "jwt 'iss' claim is malformed. Expected to be a string." } )
   end
 
   for valid_issuer in pairs(valid_issuers) do
@@ -561,7 +561,7 @@ local function validate_iss(jwt_obj, valid_issuers)
     end
   end
 
-  error("jwt 'iss' claim doesn't belong to the list of valid issuers.")
+  error( { reason = "jwt 'iss' claim doesn't belong to the list of valid issuers." } )
 end
 
 local function apply_validators(jwt_obj, validators)
@@ -573,7 +573,7 @@ local function apply_validators(jwt_obj, validators)
     local success, ret = pcall(validator, jwt_obj)
 
     if not success then
-      jwt_obj[str_const.reason] = ret
+      jwt_obj[str_const.reason] = ret.reason
       return
     end
   end
