@@ -384,7 +384,7 @@ _M.alg_whitelist = nil
 --- Returns the list of default validations that will be
 --- applied upon the verification of a jwt.
 function _M.get_default_validation_options(self)
-  return { lifetime_grace_period = 0 }
+  return { }
 end
 
 --- Set a function used to retrieve the content of x5u urls
