@@ -233,7 +233,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 11: JWT simple with default lifetime grace period and invalid exp
+=== TEST 11: JWT simple with a zero lifetime grace period and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -241,7 +241,8 @@ everything is awesome~ :p
             local jwt = require "resty.jwt"
             local jwt_str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJleHAiOjB9" ..
-                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg"
+                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg",
+                { lifetime_grace_period = 0 }
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
@@ -287,7 +288,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 13: JWT simple with default lifetime grace period and invalid nbf
+=== TEST 13: JWT simple with a zero lifetime grace period and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -299,7 +300,8 @@ everything is awesome~ :p
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 0 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
