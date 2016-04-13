@@ -112,7 +112,7 @@ signature mismatch: signature
 [error]
 
 
-=== TEST 5: JWT simple verify
+=== TEST 5: JWT simple verify with no validation option
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -122,7 +122,8 @@ signature mismatch: signature
                 "lua-resty-jwt",
                 "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
-                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY"
+                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
+                { }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -137,133 +138,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 6: JWT simple with default leeway and valid exp
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                ".eyJmb28iOiJiYXIiLCJleHAiOjk5OTk5OTk5OTl9" ..
-                ".Y503HYultweqOpvvNF3fj2FTb_rH7ZwKAXap6cPqXjw"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-true
-everything is awesome~ :p
---- no_error_log
-[error]
-
-
-=== TEST 7: JWT simple with default leeway and invalid exp
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                ".eyJmb28iOiJiYXIiLCJleHAiOjB9" ..
-                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-false
-jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
---- no_error_log
-[error]
-
-
-=== TEST 8: JWT simple with default leeway and valid nbf
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                ".eyJmb28iOiJiYXIiLCJuYmYiOjB9" ..
-                ".qZeWRQBHZhRcszwbiL7JV6Nf-irT75u4IHhoQBTqkzo"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-true
-everything is awesome~ :p
---- no_error_log
-[error]
-
-
-=== TEST 9: JWT simple with default leeway and invalid nbf
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-false
-jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
---- no_error_log
-[error]
-
-
-=== TEST 10: JWT simple with super large leeway and invalid nbf
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
-                9999999999
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-true
-everything is awesome~ :p
---- no_error_log
-[error]
-
-
-=== TEST 11: JWT sign and verify
+=== TEST 6: JWT sign and verify
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -274,7 +149,7 @@ everything is awesome~ :p
                 "lua-resty-jwt",
                 {
                     header={typ="JWT",alg="HS256"},
-                    payload={foo="bar"}
+                    payload={foo="bar", exp=9999999999}
                 }
             )
 
@@ -294,7 +169,7 @@ bar
 [error]
 
 
-=== TEST 16: JWT sign and verify RS256
+=== TEST 7: JWT sign and verify RS256
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -313,7 +188,7 @@ bar
                         x5c={
                             ngx.var.pub_key,
                         } },
-                    payload={foo="bar"}
+                    payload={foo="bar", exp=9999999999}
                 }
             )
 
@@ -333,7 +208,7 @@ bar
 [error]
 
 
-=== TEST 17: RS256 malformed header
+=== TEST 8: RS256 malformed header
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -370,7 +245,7 @@ bar
 [error]
 
 
-=== TEST 18: RS256 malformed header 2
+=== TEST 9: RS256 malformed header 2
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -407,7 +282,7 @@ bar
 [error]
 
 
-=== TEST 19: RS256 unsupported alg
+=== TEST 10: RS256 unsupported alg
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -420,8 +295,7 @@ bar
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI",
-                9999999999
+                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -436,7 +310,7 @@ whitelist unsupported alg: HS256
 [error]
 
 
-=== TEST 20: JWT sign and verify RS256 - Take 2
+=== TEST 11: JWT sign and verify RS256 - Take 2
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -461,7 +335,7 @@ whitelist unsupported alg: HS256
                         alg="RS256",
                         x5u="https://dummy.com/certs",
                     },
-                    payload={foo="bar"}
+                    payload={foo="bar", exp=9999999999}
                 }
             )
 
@@ -477,155 +351,5 @@ GET /t
 true
 everything is awesome~ :p
 bar
---- no_error_log
-[error]
-
-
-=== TEST 21: JWT simple with invalid negative leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIifQ" ..
-                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
-                -1
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- error_code: 500
---- error_log
-'leeway' is expected to be a positive number of seconds.
-[error]
-
-
-=== TEST 22: JWT simple with invalid alpha leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIifQ" ..
-                ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY",
-                "boom ?"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- error_code: 500
---- error_log
-'leeway' is expected to be a positive number of seconds.
-[error]
-
-
-=== TEST 23: JWT simple with invalid exp ("exp": "17") and default strict validation
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIiLCJleHAiOiIxNyJ9" ..
-                ".6gWBliIuNT1qF_RhD1ymI-zRyN38zGme0dHvYkOFgxM"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-false
-jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
---- no_error_log
-[error]
-
-
-=== TEST 24: JWT simple with invalid exp ("exp": -17) and default strict validation
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIiLCJleHAiOi0xN30" ..
-                ".Jd3_eeMBJeWAeyke5SbXD3TecVPpci7lNLWGze9OP9o"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-false
-jwt 'exp' claimed is malformed. Expected to be a positive numeric value.
---- no_error_log
-[error]
-
-
-=== TEST 25: JWT simple with invalid nbf ("nbf": "17") and default strict validation
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIiLCJuYmYiOiIxNyJ9" ..
-                ".kYzPvYDRiW37rsdYNfFd57KDBuZpm1loCRIJSUlQjbE"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-false
-jwt 'nbf' claimed is malformed. Expected to be a positive numeric value.
---- no_error_log
-[error]
-
-
-=== TEST 26: JWT simple with invalid nbf ("nbf": -17) and default strict validation
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local jwt = require "resty.jwt"
-            local jwt_obj = jwt:verify(
-                "lua-resty-jwt",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" ..
-                ".eyJmb28iOiJiYXIiLCJuYmYiOi0xN30" ..
-                ".jNUyAIYISmDcemGO3gE17byPZ_ZO-WZxaMt59UNslPc"
-            )
-            ngx.say(jwt_obj["verified"])
-            ngx.say(jwt_obj["reason"])
-        ';
-    }
---- request
-GET /t
---- response_body
-false
-jwt 'nbf' claimed is malformed. Expected to be a positive numeric value.
 --- no_error_log
 [error]

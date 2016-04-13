@@ -120,16 +120,16 @@ The `alg` argument specifies which hashing algorithm to use (`HS256`, `HS512`, `
 
 verify
 ------
-`syntax: local jwt_obj = jwt:verify(key, jwt_token, [, leeway])`
+`syntax: local jwt_obj = jwt:verify(key, jwt_token, [, validation_options])`
 
 verify a jwt_token and returns a jwt_obj table
 
 
 load & verify
-----------------------------------------
+-------------
 ```
 syntax: local jwt_obj = jwt:load_jwt(jwt_token)
-syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, leeway])
+syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj, [, validation_options])
 ```
 
 
@@ -148,12 +148,12 @@ load jwt, check for kid, then verify it with the correct key
     "payload": {"foo": "bar"},
     "verified": false,
     "valid": true,
-    "reason": "signature mismatche: wrong-signature"
+    "reason": "signature mismatched: wrong-signature"
 }
 ```
 
 sign-jwe
-----
+--------
 
 `syntax: local jwt_token = jwt:sign(key, table_of_jwt)`
 
@@ -172,10 +172,51 @@ The `enc` argument specifies which hashing algorithm to use for encrypting paylo
 
 verify
 ------
-`syntax: local jwt_obj = jwt:verify(key, jwt_token, [, leeway])`
+`syntax: local jwt_obj = jwt:verify(key, jwt_token, [, validation_options])`
 
 verify a jwt_token and returns a jwt_obj table
 [Back to TOC](#table-of-contents)
+
+
+validation_options parameter
+----------------------------
+
+This parameter allows one to fine tune the verification process by specifying the additional validations that should be applied to the jwt.
+
+The parameter should be expressed as a key/value table. Each key of the table should be picked from the following list.
+
+* `lifetime_grace_period`: Define the leeway in seconds to account for clock skew between the server that generated the jwt and the server validating it. Value should be zero (`0`) or a positive integer.
+
+ * When this validation option is specified, the process will ensure that the jwt contains at least one of the two `nbf` or `exp` claim and compare the current clock time against those boundaries. Would the jwt be deemed as expired or not valid yet, verification will fail.
+
+ * When none of the `nbf` and `exp` claims can be found, verification will fail.
+
+ * `nbf` and `exp` claims are expected to be expressed in the jwt as numerical values. Wouldn't that be the case, verification will fail.
+
+* `require_nbf_claim`: Express if the `nbf` claim is optional or not. Value should be a boolean.
+
+ * When this validation option is set to `true` and no `lifetime_grace_period` has been specified, a zero (`0`) leeway is implied.
+
+* `require_exp_claim`: Express if the `exp` claim is optional or not. Value should be a boolean.
+
+ * When this validation option is set to `true` and no `lifetime_grace_period` has been specified, a zero (`0`) leeway is implied.
+
+* `valid_issuers`: Whitelist the vetted issuers of the jwt. Value should be a array of strings.
+
+ * When this validation option is specified, the process will compare the jwt `iss` claim against the list of valid issuers. Comparison is done in a case sensitive manner. Would the jwt issuer not be found in the whitelist, verification will fail.
+
+  * `iss` claim is expected to be expressed in the jwt as a string. Wouldn't that be the case, verification will fail.
+
+### sample of validation_options usage ###
+```
+local jwt_obj = jwt:verify(key, jwt_token,
+    {
+        lifetime_grace_period = 120,
+        require_exp_claim = true,
+        valid_issuers = { "my-trusted-issuer", "my-other-trusteed-issuer" }
+    }
+)
+```
 
 Examples
 ========

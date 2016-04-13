@@ -179,7 +179,7 @@ signature mismatch: signature
 [error]
 
 
-=== TEST 9: JWT simple verify
+=== TEST 9: JWT simple verify with no validation option
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -190,7 +190,9 @@ signature mismatch: signature
                 ".VAoRL1IU0nOguxURF2ZcKR0SGKE1gCbqwyh8u2MLAyY"
 
             local jwt_obj = jwt:load_jwt(jwt_str)
-            local verified_obj = jwt:verify_jwt_obj("lua-resty-jwt", jwt_obj)
+            local verified_obj = jwt:verify_jwt_obj(
+                "lua-resty-jwt", jwt_obj, { }
+            )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
         ';
@@ -204,7 +206,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 10: JWT simple with default leeway and valid exp
+=== TEST 10: JWT simple with default lifetime grace period and valid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -231,7 +233,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 11: JWT simple with default leeway and invalid exp
+=== TEST 11: JWT simple with a zero lifetime grace period and invalid exp
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -243,7 +245,8 @@ everything is awesome~ :p
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 0 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -258,7 +261,7 @@ jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
 [error]
 
 
-=== TEST 12: JWT simple with default leeway and valid nbf
+=== TEST 12: JWT simple with default lifetime grace period and valid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -285,7 +288,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 13: JWT simple with default leeway and invalid nbf
+=== TEST 13: JWT simple with a zero lifetime grace period and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -297,7 +300,8 @@ everything is awesome~ :p
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 0 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
@@ -312,7 +316,7 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
 [error]
 
 
-=== TEST 14: JWT simple with super large leeway and invalid nbf
+=== TEST 14: JWT simple with super large lifetime grace period and invalid nbf
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -324,7 +328,8 @@ jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
 
             local jwt_obj = jwt:load_jwt(jwt_str)
             local verified_obj = jwt:verify_jwt_obj(
-                "lua-resty-jwt", jwt_obj, 9999999999
+                "lua-resty-jwt", jwt_obj,
+                { lifetime_grace_period = 9999999999 }
             )
             ngx.say(verified_obj["verified"])
             ngx.say(verified_obj["reason"])
