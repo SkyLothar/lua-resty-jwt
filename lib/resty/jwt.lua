@@ -802,7 +802,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
     local raw_payload = get_raw_part(str_const.payload, jwt_obj)
 
     local message =string_format(str_const.regex_join_msg, raw_header ,  raw_payload)
-    local sig = jwt_obj[str_const.signature]:gsub(str_const.dash, str_const.plus):gsub(str_const.underscore, str_const.slash)
+    local sig = jwt_obj[str_const.signature]
     local verified, err = verifier:verify(message, _M:jwt_decode(sig, false), evp.CONST.SHA256_DIGEST)
     if not verified then
       jwt_obj[str_const.reason] = err
