@@ -572,7 +572,7 @@ end
 
 local function apply_validators(jwt_obj, validators)
   if jwt_obj[str_const.reason] ~= nil then
-    return
+    return false
   end
 
   for i, validator in ipairs(validators) do
@@ -580,9 +580,11 @@ local function apply_validators(jwt_obj, validators)
 
     if not success then
       jwt_obj[str_const.reason] = ret.reason
-      return
+      return false
     end
   end
+
+  return true
 end
 
 --@function verify jwe object
@@ -604,8 +606,6 @@ local function verify_jwe_obj(secret, jwt_obj, validators)
   end
   jwt_obj.internal = nil
   jwt_obj.signature = nil
-
-  apply_validators(jwt_obj, validators)
 
   if not jwt_obj[str_const.reason] then
     jwt_obj[str_const.verified] = true
@@ -731,6 +731,10 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
 
   local validators = normalize_validation_options(self, validation_options)
 
+  if not apply_validators(jwt_obj, validators) then
+    return jwt_obj
+  end
+
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
     return verify_jwe_obj(secret, jwt_obj, validators)
@@ -806,8 +810,6 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
   else
     jwt_obj[str_const.reason] = "Unsupported algorithm " .. alg
   end
-
-  apply_validators(jwt_obj, validators)
 
   if not jwt_obj[str_const.reason] then
     jwt_obj[str_const.verified] = true
