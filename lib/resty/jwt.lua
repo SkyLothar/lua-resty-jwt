@@ -572,7 +572,7 @@ end
 
 local function apply_validators(jwt_obj, validators)
   if jwt_obj[str_const.reason] ~= nil then
-    return
+    return false
   end
 
   for i, validator in ipairs(validators) do
@@ -580,9 +580,11 @@ local function apply_validators(jwt_obj, validators)
 
     if not success then
       jwt_obj[str_const.reason] = ret.reason
-      return
+      return false
     end
   end
+
+  return true
 end
 
 --@function verify jwe object
@@ -604,8 +606,6 @@ local function verify_jwe_obj(secret, jwt_obj, validators)
   end
   jwt_obj.internal = nil
   jwt_obj.signature = nil
-
-  apply_validators(jwt_obj, validators)
 
   if not jwt_obj[str_const.reason] then
     jwt_obj[str_const.verified] = true
@@ -731,6 +731,10 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
 
   local validators = normalize_validation_options(self, validation_options)
 
+  if not apply_validators(jwt_obj, validators) then
+    return jwt_obj
+  end
+
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
     return verify_jwe_obj(secret, jwt_obj, validators)
@@ -798,16 +802,20 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
     local raw_payload = get_raw_part(str_const.payload, jwt_obj)
 
     local message =string_format(str_const.regex_join_msg, raw_header ,  raw_payload)
-    local sig = jwt_obj[str_const.signature]:gsub(str_const.dash, str_const.plus):gsub(str_const.underscore, str_const.slash)
-    local verified, err = verifier:verify(message, _M:jwt_decode(sig, false), evp.CONST.SHA256_DIGEST)
+    local sig = _M:jwt_decode(jwt_obj[str_const.signature], false)
+
+    if not sig then
+      jwt_obj[str_const.reason] = "Wrongly encoded signature"
+      return jwt_obj
+    end
+
+    local verified, err = verifier:verify(message, sig, evp.CONST.SHA256_DIGEST)
     if not verified then
       jwt_obj[str_const.reason] = err
     end
   else
     jwt_obj[str_const.reason] = "Unsupported algorithm " .. alg
   end
-
-  apply_validators(jwt_obj, validators)
 
   if not jwt_obj[str_const.reason] then
     jwt_obj[str_const.verified] = true

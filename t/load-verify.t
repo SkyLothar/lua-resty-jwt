@@ -342,3 +342,82 @@ true
 everything is awesome~ :p
 --- no_error_log
 [error]
+
+
+=== TEST 15: Verify valid RS256 signed jwt
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        set $cert '-----BEGIN CERTIFICATE-----\nMIIC2jCCAkMCAg38MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJKUDEOMAwG\nA1UECBMFVG9reW8xEDAOBgNVBAcTB0NodW8ta3UxETAPBgNVBAoTCEZyYW5rNERE\nMRgwFgYDVQQLEw9XZWJDZXJ0IFN1cHBvcnQxGDAWBgNVBAMTD0ZyYW5rNEREIFdl\nYiBDQTEjMCEGCSqGSIb3DQEJARYUc3VwcG9ydEBmcmFuazRkZC5jb20wHhcNMTIw\nODIyMDUyNzQxWhcNMTcwODIxMDUyNzQxWjBKMQswCQYDVQQGEwJKUDEOMAwGA1UE\nCAwFVG9reW8xETAPBgNVBAoMCEZyYW5rNEREMRgwFgYDVQQDDA93d3cuZXhhbXBs\nZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC0z9FeMynsC8+u\ndvX+LciZxnh5uRj4C9S6tNeeAlIGCfQYk0zUcNFCoCkTknNQd/YEiawDLNbxBqut\nbMDZ1aarys1a0lYmUeVLCIqvzBkPJTSQsCopQQ9V8WuT252zzNzs68dVGNdCJd5J\nNRQykpwexmnjPPv0mvj7i8XgG379TyW6P+WWV5okeUkXJ9eJS2ouDYdR2SM9BoVW\n+FgxDu6BmXhozW5EfsnajFp7HL8kQClI0QOc79yuKl3492rH6bzFsFn2lfwWy9ic\n7cP8EpCTeFp1tFaD+vxBhPZkeTQ1HKx6hQ5zeHIB5ySJJZ7af2W8r4eTGYzbdRW2\n4DDHCPhZAgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAQMv+BFvGdMVzkQaQ3/+2noVz\n/uAKbzpEL8xTcxYyP3lkOeh4FoxiSWqy5pGFALdPONoDuYFpLhjJSZaEwuvjI/Tr\nrGhLV1pRG9frwDFshqD2Vaj4ENBCBh6UpeBop5+285zQ4SI7q4U9oSebUDJiuOx6\n+tZ9KynmrbJpTSi0+BM=\n-----END CERTIFICATE-----';
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local function get_public_key(url)
+                return ngx.var.cert
+            end
+
+            jwt:set_trusted_certs_file("/lua-resty-jwt/testcerts/root.pem")
+            jwt:set_alg_whitelist({ RS256 = 1 })
+            jwt:set_x5u_content_retriever(get_public_key)
+
+            local jwt_token = "eyJ4NXUiOiJodHRwczpcL1wvZHVtbXkuY29tXC9jZXJ0cyIsImFsZyI6IlJTMjU2IiwidHlwIjoiSldUIn0"
+                .. ".eyJmb28iOiJiYXIifQ"
+                .. ".h4fOshUFSiVoSjV0zoJNXSaAFGIzFScI_VRHQYLefZ5uuGWWEd69q6GBx1XVN4er67WuKDTmgbsW5b_ya2eU89U6LC"
+                .. "3r2Rdu9FtYmm4aoQ5WesvC7UI63gJrhLFcbQGv1eDDPANZh-k_aOhGQLBjxdx_J2n95eKlYfqH3aZHTPtSnF7lEV4ZR"
+                .. "RsHbX3jgS2Kcx-DvNQ77A81yQsTWtECKE-fiUZ5nOMn172rOPWM-DYTimsyOzuRErqE0xoB1u8ClVxmb1Mrg4LWSPoz"
+                .. "nv5vhd8JkOXMg_5zYii6p5eIegH58IpxNYuDQ-rSo320nOvZOU7d8UOeYixYeEcEc1fMlQ"
+
+            local jwt_obj = jwt:verify(nil, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["foo"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+bar
+--- no_error_log
+[error]
+
+
+=== TEST 16: Verify RS256 signed jwt with bogus signature
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        set $cert '-----BEGIN CERTIFICATE-----\nMIIC2jCCAkMCAg38MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJKUDEOMAwG\nA1UECBMFVG9reW8xEDAOBgNVBAcTB0NodW8ta3UxETAPBgNVBAoTCEZyYW5rNERE\nMRgwFgYDVQQLEw9XZWJDZXJ0IFN1cHBvcnQxGDAWBgNVBAMTD0ZyYW5rNEREIFdl\nYiBDQTEjMCEGCSqGSIb3DQEJARYUc3VwcG9ydEBmcmFuazRkZC5jb20wHhcNMTIw\nODIyMDUyNzQxWhcNMTcwODIxMDUyNzQxWjBKMQswCQYDVQQGEwJKUDEOMAwGA1UE\nCAwFVG9reW8xETAPBgNVBAoMCEZyYW5rNEREMRgwFgYDVQQDDA93d3cuZXhhbXBs\nZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC0z9FeMynsC8+u\ndvX+LciZxnh5uRj4C9S6tNeeAlIGCfQYk0zUcNFCoCkTknNQd/YEiawDLNbxBqut\nbMDZ1aarys1a0lYmUeVLCIqvzBkPJTSQsCopQQ9V8WuT252zzNzs68dVGNdCJd5J\nNRQykpwexmnjPPv0mvj7i8XgG379TyW6P+WWV5okeUkXJ9eJS2ouDYdR2SM9BoVW\n+FgxDu6BmXhozW5EfsnajFp7HL8kQClI0QOc79yuKl3492rH6bzFsFn2lfwWy9ic\n7cP8EpCTeFp1tFaD+vxBhPZkeTQ1HKx6hQ5zeHIB5ySJJZ7af2W8r4eTGYzbdRW2\n4DDHCPhZAgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAQMv+BFvGdMVzkQaQ3/+2noVz\n/uAKbzpEL8xTcxYyP3lkOeh4FoxiSWqy5pGFALdPONoDuYFpLhjJSZaEwuvjI/Tr\nrGhLV1pRG9frwDFshqD2Vaj4ENBCBh6UpeBop5+285zQ4SI7q4U9oSebUDJiuOx6\n+tZ9KynmrbJpTSi0+BM=\n-----END CERTIFICATE-----';
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local function get_public_key(url)
+                return ngx.var.cert
+            end
+
+            jwt:set_trusted_certs_file("/lua-resty-jwt/testcerts/root.pem")
+            jwt:set_alg_whitelist({ RS256 = 1 })
+            jwt:set_x5u_content_retriever(get_public_key)
+
+            local jwt_token = "eyJ4NXUiOiJodHRwczpcL1wvZHVtbXkuY29tXC9jZXJ0cyIsImFsZyI6IlJTMjU2IiwidHlwIjoiSldUIn0"
+                .. ".eyJmb28iOiJiYXIifQ"
+                .. ".h4fOshUFSiVoSjV0zoJNXSaAFGIzFScI_VRHQYLefZ5uuGWWEd69q6GBx1XVN4er67WuKDTmgbsW5b_ya2eU89U6LC"
+                .. "3r2Rdu9FtYmm4aoQ5WesvC7UI63gJrhLFcbQGv1eDDPANZh-k_aOhGQLBjxdx_J2n95eKlYfqH3aZHTPtSnF7lEV4ZR"
+                .. "RsHbX3jgS2Kcx-DvNQ77A81yQsTWtECKE-fiUZ5nOMn172rOPWM-DYTimsyOzuRErqE0xoB1u8ClVxmb1Mrg4LWSPoz"
+                .. "nv5vhd8JkOXMg_5zYii6p5eIegH58IpxNYuDQ-rSo320nOvZOU7d8UOeYixYeEcEc1fMlQ"
+
+            -- Alter the jwt
+            jwt_token = jwt_token .. "123"
+
+            local jwt_obj = jwt:verify(nil, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+Wrongly encoded signature
+--- no_error_log
+[error]
