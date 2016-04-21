@@ -611,7 +611,7 @@ local function apply_validators(jwt_obj, validators)
     local success, ret = pcall(validator, jwt_obj)
 
     if not success then
-      jwt_obj[str_const.reason] = ret.reason
+      jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.*: ", "")
       return false
     end
   end
@@ -695,7 +695,9 @@ local function extract_certificate(jwt_obj, x5u_content_retriever)
   -- TODO - Implement jwk and kid based models...
 end
 
-local function normalize_validation_options(self, options)
+local function get_validators_from_legacy_options(self, options)
+  ngx.log(ngx.WARN, "Using *DEPRECATED* legacy validation options")
+  
   if options == nil then
     options = self.get_default_validation_options()
   end
@@ -751,6 +753,47 @@ local function normalize_validation_options(self, options)
   return validators
 end
 
+local function is_legacy_validation_options(options)
+  local known_options = { }
+  known_options[str_const.valid_issuers]=1
+  known_options[str_const.lifetime_grace_period]=1
+  known_options[str_const.require_nbf_claim]=1
+  known_options[str_const.require_exp_claim]=1
+
+  for k in pairs(options) do
+    if known_options[k] ~= nil then
+      return true
+    end
+  end
+  return false
+end
+
+local function validate_claims(self, jwt_obj, ...)
+  local claim_specs = {...}
+  local validators = { }
+  
+  -- Figure out if we are operating in "legacy" mode
+  if #claim_specs == 1 and is_legacy_validation_options(claim_specs[1]) then
+    validators = get_validators_from_legacy_options(self, claim_specs[1])
+  else
+    for i, v in ipairs(claim_specs) do
+      for claim, fx in pairs(v) do
+        if type(fx) ~= str_const.funct then
+          error("Claim spec value must be a function - see jwt-validators.lua for helper functions")
+        end
+        table.insert(validators, function (_jwt_obj)
+          local val = _jwt_obj.payload[claim];
+          if fx(val, claim, _jwt_obj) == false then
+            error({ reason = string.format("Claim '%s' ('%s') returned failure", claim, val) })
+          end
+        end)
+      end
+    end
+  end
+  
+  return apply_validators(jwt_obj, validators)
+end
+
 --@function verify jwt object
 --@param secret
 --@param jwt_object
@@ -761,11 +804,8 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
     return jwt_obj
   end
 
-  --TODO-NTOONE-ASAP: Don't use validation_options
-  local validation_options = {...}
-  local validators = normalize_validation_options(self, validation_options[1])
-
-  if not apply_validators(jwt_obj, validators) then
+  -- validate any claims that have been passed in
+  if not validate_claims(self, jwt_obj, ...) then
     return jwt_obj
   end
 
