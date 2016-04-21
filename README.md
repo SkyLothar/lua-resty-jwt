@@ -122,7 +122,7 @@ verify
 ------
 `syntax: local jwt_obj = jwt:verify(key, jwt_token, [, validation_options])`
 
-verify a jwt_token and returns a jwt_obj table
+verify a jwt_token and returns a jwt_obj table.  `key` can be a pre-shared key (as a string), *or* a function which takes a single parameter (the value of `kid` from the header) and returns either the pre-shared key (as a string) for the `kid` or `nil` if the `kid` lookup failed.  This call will fail if you try to specify a function for `key` and there is no `kid` existing in the header.
 
 
 load & verify

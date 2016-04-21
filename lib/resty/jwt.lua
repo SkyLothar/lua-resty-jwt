@@ -43,6 +43,7 @@ local str_const = {
   encrypted_key = "encrypted_key",
   alg = "alg",
   enc = "enc",
+  kid = "kid",
   exp = "exp",
   nbf = "nbf",
   iss = "iss",
@@ -442,6 +443,35 @@ local function sign_jwe(secret_key, jwt_obj)
   return table_concat(jwe_table, ".", 1, 5)
 end
 
+--@function get_secret_str  : returns the secret if it is a string, or the result of a function
+--@param either the string secret or a function that takes a string parameter and returns a string or nil
+--@param  jwt payload
+--@return the secret as a string or as a function
+local function get_secret_str(secret_or_function, jwt_obj)
+  if type(secret_or_function) == str_const.funct then
+    -- Only use with hmac algorithms
+    local alg = jwt_obj[str_const.header][str_const.alg]
+    if alg ~= str_const.HS256 and alg ~= str_const.HS512 then
+      error({reason="secret function can only be used with hmac alg: " .. alg})
+    end
+    
+    -- Pull out the kid value from the header
+    local kid_val = jwt_obj[str_const.header][str_const.kid]
+    if kid_val == nil then
+      error({reason="secret function specified without kid in header"})
+    end
+    
+    -- Call the function
+    return secret_or_function(kid_val) or error({reason="function returned nil for kid: " .. kid_val})
+  elseif type(secret_or_function) == str_const.string then
+    -- Just return the string
+    return secret_or_function
+  else
+    -- Throw an error
+    error({reason="invalid secret type (must be string or function)"})
+  end
+end
+
 --@function sign  : create a jwt/jwe signature from jwt_object
 --@param secret key
 --@param jwt/jwe payload
@@ -466,9 +496,11 @@ function _M.sign(self, secret_key, jwt_obj)
   local alg = jwt_obj[str_const.header][str_const.alg]
   local signature = ""
   if alg == str_const.HS256 then
-    signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(message)
+    local secret_str = get_secret_str(secret_key, jwt_obj)
+    signature = hmac:new(secret_str, hmac.ALGOS.SHA256):final(message)
   elseif alg == str_const.HS512 then
-    signature = hmac:new(secret_key, hmac.ALGOS.SHA512):final(message)
+    local secret_str = get_secret_str(secret_key, jwt_obj)
+    signature = hmac:new(secret_str, hmac.ALGOS.SHA512):final(message)
   elseif alg == str_const.RS256 then
     local signer, err = evp.RSASigner:new(secret_key)
     if not signer then
