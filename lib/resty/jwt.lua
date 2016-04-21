@@ -623,7 +623,7 @@ end
 --@param secret
 --@param jwt object
 --@return jwt object with reason whether verified or not
-local function verify_jwe_obj(secret, jwt_obj, validators)
+local function verify_jwe_obj(secret, jwt_obj)
   local key, mac_key, enc_key = derive_keys(jwt_obj.header.enc, jwt_obj.internal.key)
   local encoded_header = jwt_obj.internal.encoded_header
 
@@ -756,12 +756,14 @@ end
 --@param jwt_object
 --@leeway
 --@return verified jwt payload or jwt object with error code
-function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
+function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
   if not jwt_obj.valid then
     return jwt_obj
   end
 
-  local validators = normalize_validation_options(self, validation_options)
+  --TODO-NTOONE-ASAP: Don't use validation_options
+  local validation_options = {...}
+  local validators = normalize_validation_options(self, validation_options[1])
 
   if not apply_validators(jwt_obj, validators) then
     return jwt_obj
@@ -769,7 +771,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
 
   -- if jwe, invoked verify jwe
   if jwt_obj[str_const.header][str_const.enc] then
-    return verify_jwe_obj(secret, jwt_obj, validators)
+    return verify_jwe_obj(secret, jwt_obj)
   end
 
   local alg = jwt_obj[str_const.header][str_const.alg]
@@ -858,12 +860,12 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
 end
 
 
-function _M.verify(self, secret, jwt_str, validation_options)
+function _M.verify(self, secret, jwt_str, ...)
   jwt_obj = _M.load_jwt(self, jwt_str, secret)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
   end
-  return  _M.verify_jwt_obj(self, secret, jwt_obj, validation_options)
+  return  _M.verify_jwt_obj(self, secret, jwt_obj, ...)
 
 end
 
