@@ -69,6 +69,7 @@ local str_const = {
   lifetime_grace_period = "lifetime_grace_period",
   require_nbf_claim = "require_nbf_claim",
   require_exp_claim = "require_exp_claim",
+  claims = "claims",
   internal_error = "internal error",
   everything_awesome = "everything is awesome~ :p"
 }
@@ -116,8 +117,8 @@ local function is_nil_or_boolean(arg_value)
     return true
 end
 
--- @function ensure is table of strings or nil
-local function ensure_is_table_of_strings_or_nil(arg_name, arg_value)
+-- @function ensure is a non-empty table or nil
+local function ensure_is_table_or_nil(arg_name, arg_value)
   if arg_value == nil then
     return
   end
@@ -129,10 +130,17 @@ local function ensure_is_table_of_strings_or_nil(arg_name, arg_value)
   if next(arg_value) == nil then
     error(string.format("%s is expected to be a non empty table.", arg_name))
   end
+end
 
-  for i,v in ipairs(arg_value) do
-    if type(v) ~= str_const.string then
-       error(string.format("%s is expected to be a table only containing strings.", arg_name))
+-- @function ensure is table of strings or nil
+local function ensure_is_table_of_strings_or_nil(arg_name, arg_value)
+  ensure_is_table_or_nil(arg_name, arg_value)
+
+  if arg_value ~= nil then
+    for i,v in ipairs(arg_value) do
+      if type(v) ~= str_const.string then
+         error(string.format("%s is expected to be a table only containing strings.", arg_name))
+      end
     end
   end
 end
@@ -602,6 +610,34 @@ local function validate_iss(jwt_obj, valid_issuers)
   error( { reason = "jwt 'iss' claim doesn't belong to the list of valid issuers." } )
 end
 
+--@function returns a validator function to use for the given claim and spec
+local function get_claim_validator(claim, spec)
+  local spec_type = type(spec)
+  if (spec_type ~= str_const.string and spec_type ~= str_const.funct) then
+    error("Spec requirements must be either a string or a function")
+  end
+  
+  return function(jwt_obj)
+    local val = jwt_obj.payload[claim]
+    if val == nil then
+      error( { reason = "Missing required claim " .. claim })
+    end
+    
+    if spec_type == str_const.string then
+      if not string.match(val, spec) then
+        error( { 
+          reason = string.format("Claim '%s' ('%s') does not match string requirement: '%s'", claim, val, spec) 
+        } )
+      end
+    else
+      local ret = spec(val)
+      if ret == false then
+        error( { reason = string.format("Claim '%s' ('%s') returned failure", claim, val) } )
+      end
+    end
+  end
+end
+
 local function apply_validators(jwt_obj, validators)
   if jwt_obj[str_const.reason] ~= nil then
     return false
@@ -611,7 +647,7 @@ local function apply_validators(jwt_obj, validators)
     local success, ret = pcall(validator, jwt_obj)
 
     if not success then
-      jwt_obj[str_const.reason] = ret.reason
+      jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.*: ", "")
       return false
     end
   end
@@ -709,6 +745,7 @@ local function normalize_validation_options(self, options)
   known_options[str_const.lifetime_grace_period]=1
   known_options[str_const.require_nbf_claim]=1
   known_options[str_const.require_exp_claim]=1
+  known_options[str_const.claims]=1
 
   for k in pairs(options) do
     if known_options[k] == nil then
@@ -746,6 +783,16 @@ local function normalize_validation_options(self, options)
       function (jwt_obj)
         validate_lifetime(jwt_obj, options[str_const.lifetime_grace_period], options[str_const.require_nbf_claim], options[str_const.require_exp_claim])
       end)
+  end
+  
+  ensure_is_table_or_nil(
+      string.format("'%s' validation option", str_const.claims),
+      options[str_const.claims])
+
+  if options[str_const.claims] ~= nil then
+    for claim, spec in pairs(options[str_const.claims]) do
+      table.insert(validators, get_claim_validator(claim, spec))
+    end
   end
 
   return validators
