@@ -107,13 +107,13 @@ Cannot create validator for non-function chain_function
 [error]
 
 
-=== TEST 4: Validator.check
+=== TEST 4: Validator.opt_check
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.check("checker", function(v1, v2)
+            local tval = validators.opt_check("checker", function(v1, v2)
               if v2 ~= "checker" then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               if v1 == "bar" then error("Custom Error") end
@@ -140,13 +140,13 @@ true
 [error]
 
 
-=== TEST 5: Validator.check invalid function
+=== TEST 5: Validator.opt_check invalid function
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            __runSay(validators.check, "checker", "abc", "my_name", "string")
+            __runSay(validators.opt_check, "checker", "abc", "my_name", "string")
         ';
     }
 --- request
@@ -157,14 +157,14 @@ Cannot create validator for non-function check_function
 [error]
 
 
-=== TEST 6: Validator.check nil value
+=== TEST 6: Validator.opt_check nil value
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            __runSay(validators.check, nil, function(v1, v2) return true end, "my_name")
-            __runSay(validators.check, nil, function(v1, v2) return true end)
+            __runSay(validators.opt_check, nil, function(v1, v2) return true end, "my_name")
+            __runSay(validators.opt_check, nil, function(v1, v2) return true end)
         ';
     }
 --- request
@@ -176,13 +176,13 @@ Cannot create validator for nil check_val
 [error]
 
 
-=== TEST 7: Validator.check wrong type
+=== TEST 7: Validator.opt_check wrong type
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.check("checker", function(v1, v2)
+            local tval = validators.opt_check("checker", function(v1, v2)
               if v2 ~= "checker" then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               if v1 == "bar" then error("Custom Error") end
@@ -209,13 +209,13 @@ true
 [error]
 
 
-=== TEST 8: Validator.check wrong implicit type
+=== TEST 8: Validator.opt_check wrong implicit type
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.check(42, function(v1, v2)
+            local tval = validators.opt_check(42, function(v1, v2)
               if v2 ~= 42 then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               return v1 == 42
@@ -241,13 +241,13 @@ true
 [error]
 
 
-=== TEST 9: Validator.required_check
+=== TEST 9: Validator.check
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_check("checker", function(v1, v2)
+            local tval = validators.check("checker", function(v1, v2)
               if v2 ~= "checker" then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               if v1 == "bar" then ngx.say("BAR") end
@@ -275,13 +275,13 @@ true
 [error]
 
 
-=== TEST 10: Validator.equals
+=== TEST 10: Validator.opt_equals
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.equals("bar")
+            local tval = validators.opt_equals("bar")
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -303,13 +303,13 @@ true
 [error]
 
 
-=== TEST 11: Validator.equals number
+=== TEST 11: Validator.opt_equals number
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.equals(42)
+            local tval = validators.opt_equals(42)
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -331,13 +331,13 @@ true
 [error]
 
 
-=== TEST 12: Validator.required_equals
+=== TEST 12: Validator.equals
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_equals("bar")
+            local tval = validators.equals("bar")
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -359,13 +359,13 @@ false
 [error]
 
 
-=== TEST 13: Validator.matches
+=== TEST 13: Validator.opt_matches
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.matches("^b[a-z]*$")
+            local tval = validators.opt_matches("^b[a-z]*$")
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -387,13 +387,13 @@ true
 [error]
 
 
-=== TEST 14: Validator.matches number
+=== TEST 14: Validator.opt_matches number
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            __runSay(validators.matches, 42)
+            __runSay(validators.opt_matches, 42)
         ';
     }
 --- request
@@ -404,13 +404,13 @@ Cannot create validator for non-string pattern
 [error]
 
 
-=== TEST 15: Validator.required_matches
+=== TEST 15: Validator.matches
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_matches("^ba[a-z]*$")
+            local tval = validators.matches("^ba[a-z]*$")
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -432,14 +432,14 @@ false
 [error]
 
 
-=== TEST 16: Validator.any_of
+=== TEST 16: Validator.opt_any_of
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            local tval = validators.any_of({ "foo", "bar" }, function(v1, v2)
+            local tval = validators.opt_any_of({ "foo", "bar" }, function(v1, v2)
               if v2 ~= "foo" and v2 ~= "bar" then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               if v1 == "bar" then error("Custom Error") end
@@ -466,14 +466,14 @@ true
 [error]
 
 
-=== TEST 17: Validator.any_of number
+=== TEST 17: Validator.opt_any_of number
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            local tval = validators.any_of({ "foo", "bar" }, function(v1, v2)
+            local tval = validators.opt_any_of({ "foo", "bar" }, function(v1, v2)
               if v2 ~= "foo" and v2 ~= "bar" then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               if v1 == "bar" then error("Custom Error") end
@@ -502,14 +502,14 @@ true
 [error]
 
 
-=== TEST 18: Validator.any_of implied number
+=== TEST 18: Validator.opt_any_of implied number
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            local tval = validators.any_of({ 42, 43 }, function(v1, v2)
+            local tval = validators.opt_any_of({ 42, 43 }, function(v1, v2)
               if v2 ~= 42 and v2 ~= 43 then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               ngx.say("HEY")
@@ -537,14 +537,14 @@ true
 [error]
 
 
-=== TEST 19: Validator.any_of empty table
+=== TEST 19: Validator.opt_any_of empty table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.any_of, {}, function(v1, v2) return true end, "my_name", "string")
+            __runSay(validators.opt_any_of, {}, function(v1, v2) return true end, "my_name", "string")
         ';
     }
 --- request
@@ -555,14 +555,14 @@ Cannot create validator for empty table my_name
 [error]
 
 
-=== TEST 20: Validator.any_of invalid table
+=== TEST 20: Validator.opt_any_of invalid table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.any_of, "abc", function(v1, v2) return true end, "my_name", "string")
+            __runSay(validators.opt_any_of, "abc", function(v1, v2) return true end, "my_name", "string")
         ';
     }
 --- request
@@ -573,14 +573,14 @@ Cannot create validator for non-table my_name
 [error]
 
 
-=== TEST 21: Validator.any_of mixed type table
+=== TEST 21: Validator.opt_any_of mixed type table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.any_of, { "abc", 123 }, function(v1, v2) return true end, "my_name", "string")
+            __runSay(validators.opt_any_of, { "abc", 123 }, function(v1, v2) return true end, "my_name", "string")
         ';
     }
 --- request
@@ -591,13 +591,13 @@ Cannot create validator for non-string table my_name
 [error]
 
 
-=== TEST 22: Validator.required_any_of
+=== TEST 22: Validator.any_of
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_any_of({ "foo", "bar" }, function(v1, v2)
+            local tval = validators.any_of({ "foo", "bar" }, function(v1, v2)
               if v2 ~= "foo" and v2 ~= "bar" then error("SOMETHING BAD") end
               if v1 == nil then error("SOMETHING BAD") end
               if v1 == "bar" then ngx.say("BAR") else ngx.say("OTHER") end
@@ -627,13 +627,13 @@ true
 [error]
 
 
-=== TEST 23: Validator.equals_any_of
+=== TEST 23: Validator.opt_equals_any_of
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.equals_any_of({ "foo", "bar" })
+            local tval = validators.opt_equals_any_of({ "foo", "bar" })
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -655,13 +655,13 @@ true
 [error]
 
 
-=== TEST 24: Validator.equals_any_of number
+=== TEST 24: Validator.opt_equals_any_of number
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.equals_any_of({ 41, 42, 42 })
+            local tval = validators.opt_equals_any_of({ 41, 42, 42 })
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -683,14 +683,14 @@ true
 [error]
 
 
-=== TEST 25: Validator.equals_any_of empty table
+=== TEST 25: Validator.opt_equals_any_of empty table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.equals_any_of, {})
+            __runSay(validators.opt_equals_any_of, {})
         ';
     }
 --- request
@@ -701,14 +701,14 @@ Cannot create validator for empty table check_values
 [error]
 
 
-=== TEST 26: Validator.equals_any_of invalid table
+=== TEST 26: Validator.opt_equals_any_of invalid table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.equals_any_of, "abc")
+            __runSay(validators.opt_equals_any_of, "abc")
         ';
     }
 --- request
@@ -719,14 +719,14 @@ Cannot create validator for non-table check_values
 [error]
 
 
-=== TEST 27: Validator.equals_any_of mixed type table
+=== TEST 27: Validator.opt_equals_any_of mixed type table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.equals_any_of, { "abc", 123 })
+            __runSay(validators.opt_equals_any_of, { "abc", 123 })
         ';
     }
 --- request
@@ -737,13 +737,13 @@ Cannot create validator for non-string table check_values
 [error]
 
 
-=== TEST 28: Validator.required_equals_any_of
+=== TEST 28: Validator.equals_any_of
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_equals_any_of({ "foo", "bar" })
+            local tval = validators.equals_any_of({ "foo", "bar" })
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -765,13 +765,13 @@ false
 [error]
 
 
-=== TEST 29: Validator.matches_any_of
+=== TEST 29: Validator.opt_matches_any_of
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.matches_any_of({ "^b[a-z]*$", "^abc$" })
+            local tval = validators.opt_matches_any_of({ "^b[a-z]*$", "^abc$" })
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -793,13 +793,13 @@ true
 [error]
 
 
-=== TEST 30: Validator.matches_any_of number
+=== TEST 30: Validator.opt_matches_any_of number
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            __runSay(validators.matches_any_of, { 41, 42 })
+            __runSay(validators.opt_matches_any_of, { 41, 42 })
         ';
     }
 --- request
@@ -810,14 +810,14 @@ Cannot create validator for non-string table patterns
 [error]
 
 
-=== TEST 31: Validator.matches_any_of empty table
+=== TEST 31: Validator.opt_matches_any_of empty table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.matches_any_of, {})
+            __runSay(validators.opt_matches_any_of, {})
         ';
     }
 --- request
@@ -828,14 +828,14 @@ Cannot create validator for empty table patterns
 [error]
 
 
-=== TEST 32: Validator.matches_any_of invalid table
+=== TEST 32: Validator.opt_matches_any_of invalid table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.matches_any_of, "abc")
+            __runSay(validators.opt_matches_any_of, "abc")
         ';
     }
 --- request
@@ -846,14 +846,14 @@ Cannot create validator for non-table patterns
 [error]
 
 
-=== TEST 33: Validator.matches_any_of mixed type table
+=== TEST 33: Validator.opt_matches_any_of mixed type table
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.matches_any_of, { "abc", 123 })
+            __runSay(validators.opt_matches_any_of, { "abc", 123 })
         ';
     }
 --- request
@@ -864,14 +864,14 @@ Cannot create validator for non-string table patterns
 [error]
 
 
-=== TEST 34: Validator.matches_any_of non-string
+=== TEST 34: Validator.opt_matches_any_of non-string
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local cjson = require "cjson.safe"
             local validators = require "resty.jwt-validators"
-            __runSay(validators.matches_any_of, { 41, 42 })
+            __runSay(validators.opt_matches_any_of, { 41, 42 })
         ';
     }
 --- request
@@ -882,13 +882,13 @@ Cannot create validator for non-string table patterns
 [error]
 
 
-=== TEST 35: Validator.required_matches_any_of
+=== TEST 35: Validator.matches_any_of
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_matches_any_of({ "^ba[a-z]*$", "^abc$" })
+            local tval = validators.matches_any_of({ "^ba[a-z]*$", "^abc$" })
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", baz="boo", num=42 }
@@ -910,7 +910,54 @@ false
 [error]
 
 
-=== TEST 36: Validator.greater_than
+=== TEST 36: Validator.opt_greater_than
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            local tval = validators.opt_greater_than(42)
+            local obj = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", num1=41, num2=42, num3=43 }
+            }
+            __testValidator(tval, "foo", obj)
+            __testValidator(tval, "blah", obj)
+            __testValidator(tval, "num1", obj)
+            __testValidator(tval, "num2", obj)
+            __testValidator(tval, "num3", obj)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+'foo' is malformed.  Expected to be a number.
+true
+false
+false
+true
+--- no_error_log
+[error]
+
+
+=== TEST 37: Validator.opt_greater_than invalid value
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_greater_than, "abc")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-number check_val
+--- no_error_log
+[error]
+
+
+=== TEST 38: Validator.greater_than
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -932,7 +979,7 @@ false
 GET /t
 --- response_body
 'foo' is malformed.  Expected to be a number.
-true
+'blah' claim is required.
 false
 false
 true
@@ -940,30 +987,13 @@ true
 [error]
 
 
-=== TEST 37: Validator.greater_than invalid value
+=== TEST 39: Validator.opt_greater_than_or_equal
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            __runSay(validators.greater_than, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number check_val
---- no_error_log
-[error]
-
-
-=== TEST 38: Validator.required_greater_than
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            local tval = validators.required_greater_than(42)
+            local tval = validators.opt_greater_than_or_equal(42)
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", num1=41, num2=42, num3=43 }
@@ -979,15 +1009,32 @@ Cannot create validator for non-number check_val
 GET /t
 --- response_body
 'foo' is malformed.  Expected to be a number.
-'blah' claim is required.
+true
 false
-false
+true
 true
 --- no_error_log
 [error]
 
 
-=== TEST 39: Validator.greater_than_or_equal
+=== TEST 40: Validator.opt_greater_than_or_equal invalid value
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_greater_than_or_equal, "abc")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-number check_val
+--- no_error_log
+[error]
+
+
+=== TEST 41: Validator.greater_than_or_equal
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1009,7 +1056,7 @@ true
 GET /t
 --- response_body
 'foo' is malformed.  Expected to be a number.
-true
+'blah' claim is required.
 false
 true
 true
@@ -1017,30 +1064,13 @@ true
 [error]
 
 
-=== TEST 40: Validator.greater_than_or_equal invalid value
+=== TEST 42: Validator.opt_less_than
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            __runSay(validators.greater_than_or_equal, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number check_val
---- no_error_log
-[error]
-
-
-=== TEST 41: Validator.required_greater_than_or_equal
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            local tval = validators.required_greater_than_or_equal(42)
+            local tval = validators.opt_less_than(42)
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", num1=41, num2=42, num3=43 }
@@ -1056,15 +1086,32 @@ Cannot create validator for non-number check_val
 GET /t
 --- response_body
 'foo' is malformed.  Expected to be a number.
-'blah' claim is required.
+true
+true
 false
-true
-true
+false
 --- no_error_log
 [error]
 
 
-=== TEST 42: Validator.less_than
+=== TEST 43: Validator.opt_less_than invalid value
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_less_than, "abc")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-number check_val
+--- no_error_log
+[error]
+
+
+=== TEST 44: Validator.less_than
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1086,7 +1133,7 @@ true
 GET /t
 --- response_body
 'foo' is malformed.  Expected to be a number.
-true
+'blah' claim is required.
 true
 false
 false
@@ -1094,30 +1141,13 @@ false
 [error]
 
 
-=== TEST 43: Validator.less_than invalid value
+=== TEST 45: Validator.opt_less_than_or_equal
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            __runSay(validators.less_than, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number check_val
---- no_error_log
-[error]
-
-
-=== TEST 44: Validator.required_less_than
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            local tval = validators.required_less_than(42)
+            local tval = validators.opt_less_than_or_equal(42)
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", num1=41, num2=42, num3=43 }
@@ -1133,15 +1163,32 @@ Cannot create validator for non-number check_val
 GET /t
 --- response_body
 'foo' is malformed.  Expected to be a number.
-'blah' claim is required.
 true
-false
+true
+true
 false
 --- no_error_log
 [error]
 
 
-=== TEST 45: Validator.less_than_or_equal
+=== TEST 46: Validator.opt_less_than_or_equal invalid value
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_less_than_or_equal, "abc")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-number check_val
+--- no_error_log
+[error]
+
+
+=== TEST 47: Validator.less_than_or_equal
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1163,53 +1210,6 @@ false
 GET /t
 --- response_body
 'foo' is malformed.  Expected to be a number.
-true
-true
-true
-false
---- no_error_log
-[error]
-
-
-=== TEST 46: Validator.less_than_or_equal invalid value
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.less_than_or_equal, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number check_val
---- no_error_log
-[error]
-
-
-=== TEST 47: Validator.required_less_than_or_equal
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            local tval = validators.required_less_than_or_equal(42)
-            local obj = {
-              header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", num1=41, num2=42, num3=43 }
-            }
-            __testValidator(tval, "foo", obj)
-            __testValidator(tval, "blah", obj)
-            __testValidator(tval, "num1", obj)
-            __testValidator(tval, "num2", obj)
-            __testValidator(tval, "num3", obj)
-        ';
-    }
---- request
-GET /t
---- response_body
-'foo' is malformed.  Expected to be a number.
 'blah' claim is required.
 true
 true
@@ -1218,13 +1218,13 @@ false
 [error]
 
 
-=== TEST 48: Validator.is_not_before
+=== TEST 48: Validator.opt_is_not_before
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_before()
+            local tval = validators.opt_is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1331,14 +1331,14 @@ clock function must return a non-negative number
 [error]
 
 
-=== TEST 54: Validator.is_not_before with leeway
+=== TEST 54: Validator.opt_is_not_before with leeway
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
             validators.set_system_leeway(3153600000)
-            local tval = validators.is_not_before()
+            local tval = validators.opt_is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1360,14 +1360,14 @@ true
 [error]
 
 
-=== TEST 55: Validator.is_not_before specific time
+=== TEST 55: Validator.opt_is_not_before specific time
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
             validators.set_system_clock(function() return 956354999 end)
-            local tval = validators.is_not_before()
+            local tval = validators.opt_is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
@@ -1392,7 +1392,7 @@ false
 
 
 
-=== TEST 56: Validator.is_not_before specific time and leeway
+=== TEST 56: Validator.opt_is_not_before specific time and leeway
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1400,7 +1400,7 @@ false
             local validators = require "resty.jwt-validators"
             validators.set_system_leeway(1)
             validators.set_system_clock(function() return 956354999 end)
-            local tval = validators.is_not_before()
+            local tval = validators.opt_is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
@@ -1424,13 +1424,13 @@ true
 [error]
 
 
-=== TEST 57: Validator.required_is_not_before
+=== TEST 57: Validator.is_not_before
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_is_not_before()
+            local tval = validators.is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1452,13 +1452,13 @@ false
 [error]
 
 
-=== TEST 58: Validator.is_not_expired
+=== TEST 58: Validator.opt_is_not_expired
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_expired()
+            local tval = validators.opt_is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1480,14 +1480,14 @@ true
 [error]
 
 
-=== TEST 59: Validator.is_not_expired with leeway
+=== TEST 59: Validator.opt_is_not_expired with leeway
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
             validators.set_system_leeway(3153600000)
-            local tval = validators.is_not_expired()
+            local tval = validators.opt_is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1509,14 +1509,14 @@ true
 [error]
 
 
-=== TEST 60: Validator.is_not_expired specific time
+=== TEST 60: Validator.opt_is_not_expired specific time
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
             validators.set_system_clock(function() return 956354999 end)
-            local tval = validators.is_not_expired()
+            local tval = validators.opt_is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
@@ -1541,7 +1541,7 @@ true
 
 
 
-=== TEST 61: Validator.is_not_expired specific time and leeway
+=== TEST 61: Validator.opt_is_not_expired specific time and leeway
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1549,7 +1549,7 @@ true
             local validators = require "resty.jwt-validators"
             validators.set_system_leeway(1)
             validators.set_system_clock(function() return 956354999 end)
-            local tval = validators.is_not_expired()
+            local tval = validators.opt_is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
@@ -1573,13 +1573,13 @@ true
 [error]
 
 
-=== TEST 62: Validator.required_is_not_expired
+=== TEST 62: Validator.is_not_expired
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.required_is_not_expired()
+            local tval = validators.is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }

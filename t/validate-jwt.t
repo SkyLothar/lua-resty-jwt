@@ -53,7 +53,7 @@ everything is awesome~ :p
                 ".eyJmb28iOiJiYXIiLCJzdWIiOiJUZXN0IFN1YmplY3QifQ" ..
                 ".UDSQ6edgmmSR9Us53p7Mg2MvcsbVNLCQISJj-rE7zPI",
                 {
-                  sub = validators.required_equals("Test Subject")
+                  sub = validators.equals("Test Subject")
                 }
             )
             ngx.say(jwt_obj["verified"])
@@ -82,7 +82,7 @@ everything is awesome~ :p
                 ".eyJmb28iOiJiYXIiLCJzdWIiOiJUZXN0IFN1YmplY3QifQ" ..
                 ".UDSQ6edgmmSR9Us53p7Mg2MvcsbVNLCQISJj-rE7zPI",
                 {
-                  sub = validators.required_matches("^Test [a-zA-Z]+$")
+                  sub = validators.matches("^Test [a-zA-Z]+$")
                 }
             )
             ngx.say(jwt_obj["verified"])
@@ -111,7 +111,7 @@ everything is awesome~ :p
                 ".eyJmb28iOiJiYXIiLCJzdWIiOiJUZXN0IFN1YmplY3QifQ" ..
                 ".UDSQ6edgmmSR9Us53p7Mg2MvcsbVNLCQISJj-rE7zPI",
                 {
-                  sub = validators.required_matches("st Sub")
+                  sub = validators.matches("st Sub")
                 }
             )
             ngx.say(jwt_obj["verified"])
@@ -140,7 +140,7 @@ everything is awesome~ :p
                 ".eyJmb28iOiJiYXIiLCJzdWIiOiJUZXN0IFN1YmplY3QifQ" ..
                 ".UDSQ6edgmmSR9Us53p7Mg2MvcsbVNLCQISJj-rE7zPI",
                 {
-                  sub = validators.required_equals("Some Other")
+                  sub = validators.equals("Some Other")
                 }
             )
             ngx.say(jwt_obj["verified"])
@@ -239,7 +239,7 @@ Test Subject does not pass function
                 ".eyJmb28iOiJiYXIifQ" ..
                 ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
                 {
-                  sub = validators.required_equals("Test Subject")
+                  sub = validators.equals("Test Subject")
                 }
             )
             ngx.say(jwt_obj["verified"])

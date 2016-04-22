@@ -21,6 +21,15 @@ local _M = {_VERSION="0.1.3"}
 ]]--
 
 
+--[[
+    A function which will define a validator.  It creates both "opt_" and required (non-"opt_") 
+    versions.  The function that is passed in is the *optional* version.
+]]--
+local function define_validator(name, fx)
+  _M["opt_" .. name] = fx
+  _M[name] = function(...) return _M.required(fx(...)) end
+end
+
 -- Validation messages
 local messages = {
   nil_validator = "Cannot create validator for nil %s",
@@ -136,7 +145,7 @@ end
     to type(check_val).  The first parameter passed to check_function will *never* be
     nil (check succeeds if value is nil).  Use the required version to fail on nil.
 ]]--
-function _M.check(check_val, check_function, name, check_type)
+define_validator("check", function(check_val, check_function, name, check_type)
   name = name or "check_val"
   ensure_not_nil(check_val, messages.nil_validator, name)
   
@@ -150,9 +159,7 @@ function _M.check(check_val, check_function, name, check_type)
     ensure_is_type(val, check_type, messages.wrong_type_claim, claim, check_type)
     return check_function(val, check_val)
   end
-end
--- And the required version
-function _M.required_check(...) return _M.required(_M.check(...)) end
+end)
 
 
 --[[
@@ -160,23 +167,19 @@ function _M.required_check(...) return _M.required(_M.check(...)) end
     If the value is nil, then this check succeeds.  The value of check_val cannot be
     nil.
 ]]--
-function _M.equals(check_val)
-  return _M.check(check_val, equality_function, "check_val")
-end
--- And the required version
-function _M.required_equals(...) return _M.required(_M.equals(...)) end
+define_validator("equals", function(check_val)
+  return _M.opt_check(check_val, equality_function, "check_val")
+end)
 
 
 --[[
     Returns a validator that checks if a value matches the given pattern.  If the
     value is nil, then this check succeeds.  The value of pattern must be a string.
 ]]--
-function _M.matches(pattern)
+define_validator("matches", function (pattern)
   ensure_is_type(pattern, "string", messages.wrong_type_validator, "string", "pattern")
-  return _M.check(pattern, string_match_function, "pattern", "string")
-end
--- And the required version
-function _M.required_matches(...) return _M.required(_M.matches(...)) end
+  return _M.opt_check(pattern, string_match_function, "pattern", "string")
+end)
 
 
 --[[
@@ -188,7 +191,7 @@ function _M.required_matches(...) return _M.required(_M.matches(...)) end
     and defaults to "check_values".  The optional check_type is used to make sure that 
     the check type matches and defaults to type(check_values[1]) - the table type.
 ]]--
-function _M.any_of(check_values, check_function, name, check_type, table_type)
+define_validator("any_of", function(check_values, check_function, name, check_type, table_type)
   name = name or "check_values"
   ensure_not_nil(check_values, messages.nil_validator, name)
   ensure_is_type(check_values, "table", messages.wrong_type_validator, "table", name)
@@ -201,37 +204,31 @@ function _M.any_of(check_values, check_function, name, check_type, table_type)
   ensure_is_type(check_function, "function", messages.wrong_type_validator, "function", "check_function")
   
   check_type = check_type or table_type
-  return _M.check(check_values, function(v1, v2)
+  return _M.opt_check(check_values, function(v1, v2)
     for i, v in ipairs(v2) do
       if check_function(v1, v) then return true end
     end
     return false
   end, name, check_type)
-end
--- And the required version
-function _M.required_any_of(...) return _M.required(_M.any_of(...)) end
+end)
 
 
 --[[
     Returns a validator that checks if a value exactly equals any of the given values.
     If the value is nil, then this check succeeds.
 ]]--
-function _M.equals_any_of(check_values)
-  return _M.any_of(check_values, equality_function, "check_values")
-end
--- And the required version
-function _M.required_equals_any_of(...) return _M.required(_M.equals_any_of(...)) end
+define_validator("equals_any_of", function(check_values)
+  return _M.opt_any_of(check_values, equality_function, "check_values")
+end)
 
 
 --[[
     Returns a validator that checks if a value matches any of the given patterns.
     If the value is nil, then this check succeeds.
 ]]--
-function _M.matches_any_of(patterns)
-  return _M.any_of(patterns, string_match_function, "patterns", "string", "string")
-end
--- And the required version
-function _M.required_matches_any_of(...) return _M.required(_M.matches_any_of(...)) end
+define_validator("matches_any_of", function(patterns)
+  return _M.opt_any_of(patterns, string_match_function, "patterns", "string", "string")
+end)
 
 
 --[[
@@ -239,27 +236,22 @@ function _M.required_matches_any_of(...) return _M.required(_M.matches_any_of(..
     check_value.  If the value is nil, then this check succeeds.  The value of 
     check_val cannot be nil and must be a number.
 ]]--
-function _M.greater_than(check_val)
+define_validator("greater_than", function(check_val)
   ensure_is_type(check_val, "number", messages.wrong_type_validator, "number", "check_val")
-  return _M.check(check_val, greater_than_function, "check_val", "number")
-end
-function _M.greater_than_or_equal(check_val)
+  return _M.opt_check(check_val, greater_than_function, "check_val", "number")
+end)
+define_validator("greater_than_or_equal", function(check_val)
   ensure_is_type(check_val, "number", messages.wrong_type_validator, "number", "check_val")
-  return _M.check(check_val, greater_than_or_equal_function, "check_val", "number")
-end
-function _M.less_than(check_val)
+  return _M.opt_check(check_val, greater_than_or_equal_function, "check_val", "number")
+end)
+define_validator("less_than", function(check_val)
   ensure_is_type(check_val, "number", messages.wrong_type_validator, "number", "check_val")
-  return _M.check(check_val, less_than_function, "check_val", "number")
-end
-function _M.less_than_or_equal(check_val)
+  return _M.opt_check(check_val, less_than_function, "check_val", "number")
+end)
+define_validator("less_than_or_equal", function(check_val)
   ensure_is_type(check_val, "number", messages.wrong_type_validator, "number", "check_val")
-  return _M.check(check_val, less_than_or_equal_function, "check_val", "number")
-end
--- And the required versions
-function _M.required_greater_than(...) return _M.required(_M.greater_than(...)) end
-function _M.required_greater_than_or_equal(...) return _M.required(_M.greater_than_or_equal(...)) end
-function _M.required_less_than(...) return _M.required(_M.less_than(...)) end
-function _M.required_less_than_or_equal(...) return _M.required(_M.less_than_or_equal(...)) end
+  return _M.opt_check(check_val, less_than_or_equal_function, "check_val", "number")
+end)
 
 
 --[[
@@ -296,11 +288,9 @@ end
       val <= (system_clock() + system_leeway).
     If the value is nil, then this check succeeds.
 ]]--
-function _M.is_not_before()
-  return _M.less_than_or_equal(system_clock() + system_leeway)
-end
--- And the required version
-function _M.required_is_not_before(...) return _M.required(_M.is_not_before(...)) end
+define_validator("is_not_before", function()
+  return _M.opt_less_than_or_equal(system_clock() + system_leeway)
+end)
 
 
 --[[
@@ -309,11 +299,9 @@ function _M.required_is_not_before(...) return _M.required(_M.is_not_before(...)
       val > (system_clock() - system_leeway).
     If the value is nil, then this check succeeds.
 ]]--
-function _M.is_not_expired()
-  return _M.greater_than(system_clock() - system_leeway)
-end
--- And the required version
-function _M.required_is_not_expired(...) return _M.required(_M.is_not_expired(...)) end
+define_validator("is_not_expired", function()
+  return _M.opt_greater_than(system_clock() - system_leeway)
+end)
 
 
 return _M
