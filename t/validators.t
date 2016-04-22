@@ -1601,3 +1601,43 @@ true
 [error]
 
 
+=== TEST 63: Validator.chain with multiples
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            local tval = validators.chain(function(val, claim)
+              ngx.say("1 - " .. claim)
+            end, function(val, claim)
+              ngx.say("2 - " .. (val or "nil"))
+              return true
+            end, function(val, claim)
+              ngx.say("3 - " .. claim .. " - " .. (val or "nil"))
+              return val ~= "bar"
+            end, function(val, claim)
+              error("ONLY BLAH")
+            end)
+            local obj = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar" }
+            }
+            __testValidator(tval, "foo", obj)
+            __testValidator(tval, "blah", obj)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+1 - foo
+2 - bar
+3 - foo - bar
+false
+1 - blah
+2 - nil
+3 - blah - nil
+ONLY BLAH
+--- no_error_log
+[error]
+
+

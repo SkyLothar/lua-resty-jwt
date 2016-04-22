@@ -28,7 +28,7 @@ local _M = {_VERSION="0.1.3"}
 ]]--
 local function define_validator(name, fx)
   _M["opt_" .. name] = fx
-  _M[name] = function(...) return _M.required(fx(...)) end
+  _M[name] = function(...) return _M.chain(_M.required(), fx(...)) end
 end
 
 -- Validation messages
@@ -112,6 +112,26 @@ end
 
 
 --[[
+    Returns a validator that chains the given functions together, one after 
+    another - as long as they keep passing their checks.
+]]--
+function _M.chain(...)
+  local chain_functions = {...}
+  for _, fx in ipairs(chain_functions) do
+    ensure_is_type(fx, "function", messages.wrong_type_validator, "function", "chain_function")
+  end
+
+  return function(val, claim, jwt_json)
+    for _, fx in ipairs(chain_functions) do
+      if fx(val, claim, jwt_json) == false then
+        return false
+      end
+    end
+    return true
+  end
+end
+
+--[[
     Returns a validator that returns false if a value doesn't exist.  If
     the value exists and a chain_function is specified, then the value of 
         chain_function(val, claim, jwt_json)
@@ -122,18 +142,12 @@ end
 ]]--
 function _M.required(chain_function)
   if chain_function ~= nil then
-    ensure_is_type(chain_function, "function", messages.wrong_type_validator, "function", "chain_function")
+    return _M.chain(_M.required(), chain_function)
   end
+  
   return function(val, claim, jwt_json)
     ensure_not_nil(val, messages.required_claim, claim)
-    
-    if chain_function ~= nil then
-      -- Chain function exists - call it
-      return chain_function(val, claim, jwt_json)
-    else
-      -- Value exists, but no chain function, just return true
-      return true
-    end
+    return true
   end
 end
 
