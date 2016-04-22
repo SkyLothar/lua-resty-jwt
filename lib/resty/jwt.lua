@@ -776,6 +776,8 @@ local function validate_claims(self, jwt_obj, ...)
   if #claim_specs == 1 and is_legacy_validation_options(claim_specs[1]) then
     validators = get_validators_from_legacy_options(self, claim_specs[1])
   else
+    -- Encode the current jwt_obj and use it when calling the individual validators
+    local jwt_json = cjson_encode(jwt_obj)
     for i, v in ipairs(claim_specs) do
       for claim, fx in pairs(v) do
         if type(fx) ~= str_const.funct then
@@ -783,7 +785,7 @@ local function validate_claims(self, jwt_obj, ...)
         end
         table.insert(validators, function (_jwt_obj)
           local val = _jwt_obj.payload[claim];
-          if fx(val, claim, _jwt_obj) == false then
+          if fx(val, claim, jwt_json) == false then
             error({ reason = string.format("Claim '%s' ('%s') returned failure", claim, val) })
           end
         end)

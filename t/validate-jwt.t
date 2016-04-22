@@ -490,3 +490,41 @@ false
 [error]
 
 
+=== TEST 17: JWT verification that does "bad things" to the object
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
+            local cjson = require "cjson.safe"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                ".eyJmb28iOiJiYXIifQ" ..
+                ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
+                {
+                  sub = function(val, claim, jwt_json)
+                    local tgt_obj = cjson.decode(jwt_json)
+                    ngx.say(tgt_obj.payload["foo"])
+                    tgt_obj["BAD"] = true
+                    jwt_json = "GO AWAY"
+                  end
+                }
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["BAD"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+bar
+true
+everything is awesome~ :p
+nil
+--- no_error_log
+[error]
+
+

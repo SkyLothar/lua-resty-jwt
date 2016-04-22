@@ -4,7 +4,7 @@ local _M = {_VERSION="0.1.3"}
   This file defines "validators" to be used in validating a spec.  A "validator" is simply a function with
   a signature that matches:
 
-    function(val, claim, jwt_obj)
+    function(val, claim, jwt_json)
 
   This function returns either true or false.  If a validator needs to give more information on why it failed,
   then it can also raise an error (which will be used in the "reason" part of the validated jwt_obj).  If a
@@ -17,7 +17,8 @@ local _M = {_VERSION="0.1.3"}
   "claim" is the claim that is being tested.  It is passed in just in case a validator needs to do additional
   checks.  It will be nil if the validator is being called for the full object.
 
-  "jwt_obj" is the full object that is being tested.  It will never be nil.
+  "jwt_json" is a json-encoded representation of the full object that is being tested.  It will never be nil,
+  and can always be decoded using cjson.decode(jwt_json).
 ]]--
 
 
@@ -113,7 +114,7 @@ end
 --[[
     Returns a validator that returns false if a value doesn't exist.  If
     the value exists and a chain_function is specified, then the value of 
-        chain_function(val, claim, jwt_obj)
+        chain_function(val, claim, jwt_json)
     will be returned, otherwise, true will be returned.  This allows for 
     specifying that a value is both required *and* it must match some 
     additional check.  This function will be used in the "required_*" shortcut
@@ -123,12 +124,12 @@ function _M.required(chain_function)
   if chain_function ~= nil then
     ensure_is_type(chain_function, "function", messages.wrong_type_validator, "function", "chain_function")
   end
-  return function(val, claim, jwt_obj)
+  return function(val, claim, jwt_json)
     ensure_not_nil(val, messages.required_claim, claim)
     
     if chain_function ~= nil then
       -- Chain function exists - call it
-      return chain_function(val, claim, jwt_obj)
+      return chain_function(val, claim, jwt_json)
     else
       -- Value exists, but no chain function, just return true
       return true
@@ -153,7 +154,7 @@ define_validator("check", function(check_val, check_function, name, check_type)
   ensure_is_type(check_function, "function", messages.wrong_type_validator, "function", "check_function")
   
   check_type = check_type or type(check_val)
-  return function(val, claim, jwt_obj)
+  return function(val, claim, jwt_json)
     if val == nil then return true end
     
     ensure_is_type(val, check_type, messages.wrong_type_claim, claim, check_type)
