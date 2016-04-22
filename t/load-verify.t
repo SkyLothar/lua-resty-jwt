@@ -256,7 +256,7 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
+'exp' claim expired at Thu, 01 Jan 1970 00:00:00 GMT
 --- no_error_log
 [error]
 
@@ -311,7 +311,7 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
+'nbf' claim not valid until Sat, 20 Nov 2286 17:46:39 GMT
 --- no_error_log
 [error]
 

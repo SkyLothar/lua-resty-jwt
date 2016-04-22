@@ -36,7 +36,7 @@ __DATA__
 GET /t
 --- response_body
 false
-jwt 'exp' claim is malformed. Expected to be a positive numeric value.
+'exp' is malformed.  Expected to be a positive numeric value.
 --- no_error_log
 [error]
 
@@ -62,7 +62,7 @@ jwt 'exp' claim is malformed. Expected to be a positive numeric value.
 GET /t
 --- response_body
 false
-jwt 'exp' claim is malformed. Expected to be a positive numeric value.
+'exp' is malformed.  Expected to be a positive numeric value.
 --- no_error_log
 [error]
 
@@ -88,7 +88,7 @@ jwt 'exp' claim is malformed. Expected to be a positive numeric value.
 GET /t
 --- response_body
 false
-jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
+'nbf' is malformed.  Expected to be a positive numeric value.
 --- no_error_log
 [error]
 
@@ -114,7 +114,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 GET /t
 --- response_body
 false
-jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
+'nbf' is malformed.  Expected to be a positive numeric value.
 --- no_error_log
 [error]
 
@@ -140,7 +140,7 @@ jwt 'nbf' claim is malformed. Expected to be a positive numeric value.
 GET /t
 --- error_code: 500
 --- error_log
-'lifetime_grace_period' validation option is expected to be zero or a positive number of seconds.
+leeway must be a non-negative number
 [error]
 
 
@@ -165,7 +165,7 @@ GET /t
 GET /t
 --- error_code: 500
 --- error_log
-'lifetime_grace_period' validation option is expected to be zero or a positive number of seconds.
+leeway must be a non-negative number
 [error]
 
 
@@ -216,7 +216,7 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-jwt token expired at: Thu, 01 Jan 1970 00:00:00 GMT
+'exp' claim expired at Thu, 01 Jan 1970 00:00:00 GMT
 --- no_error_log
 [error]
 
@@ -268,7 +268,7 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-jwt token not valid until: Sat, 20 Nov 2286 17:46:39 GMT
+'nbf' claim not valid until Sat, 20 Nov 2286 17:46:39 GMT
 --- no_error_log
 [error]
 
@@ -424,7 +424,7 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-jwt lacks both 'exp' and 'nbf' claims.
+Both 'nbf' and 'exp' are missing.
 --- no_error_log
 [error]
 
@@ -450,7 +450,7 @@ jwt lacks both 'exp' and 'nbf' claims.
 GET /t
 --- response_body
 false
-jwt lacks both 'exp' and 'nbf' claims.
+Both 'nbf' and 'exp' are missing.
 --- no_error_log
 [error]
 
@@ -476,7 +476,7 @@ jwt lacks both 'exp' and 'nbf' claims.
 GET /t
 --- response_body
 false
-jwt lacks the 'exp' claim.
+'exp' claim is required.
 --- no_error_log
 [error]
 
@@ -502,7 +502,7 @@ jwt lacks the 'exp' claim.
 GET /t
 --- response_body
 false
-jwt lacks the 'nbf' claim.
+'nbf' claim is required.
 --- no_error_log
 [error]
 
@@ -554,7 +554,7 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-jwt lacks the 'nbf' claim.
+'nbf' claim is required.
 --- no_error_log
 [error]
 
@@ -606,6 +606,6 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-jwt lacks the 'exp' claim.
+'exp' claim is required.
 --- no_error_log
 [error]

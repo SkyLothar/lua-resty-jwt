@@ -84,25 +84,6 @@ local function split_string(str, delim, maxNb)
   return result
 end
 
--- @function is nil or positive number
--- @return true if param is nil or => 0; false otherwise
-local function is_nil_or_positive_number(arg_value)
-    if arg_value == nil then
-        return true
-    end
-
-    if type(arg_value) ~= str_const.number then
-        return false
-    end
-
-    if arg_value < 0 then
-        return false
-    end
-
-    return true
-end
-
-
 -- @function is nil or boolean
 -- @return true if param is nil or true or false; false otherwise
 local function is_nil_or_boolean(arg_value)
@@ -115,27 +96,6 @@ local function is_nil_or_boolean(arg_value)
     end
 
     return true
-end
-
--- @function ensure is table of strings or nil
-local function ensure_is_table_of_strings_or_nil(arg_name, arg_value)
-  if arg_value == nil then
-    return
-  end
-
-  if (type(arg_value) ~= str_const.table) then
-    error(string.format("%s is expected to be a table.", arg_name))
-  end
-
-  if next(arg_value) == nil then
-    error(string.format("%s is expected to be a non empty table.", arg_name))
-  end
-
-  for i,v in ipairs(arg_value) do
-    if type(v) ~= str_const.string then
-       error(string.format("%s is expected to be a table only containing strings.", arg_name))
-    end
-  end
 end
 
 --@function get the row part
@@ -535,91 +495,6 @@ function _M.load_jwt(self, jwt_str, secret)
   return jwt_obj
 end
 
---@function validate exp nbf claims - validate expiry and not valid before
---@param jwt_obj, leeway, require_nbf_claim, require_exp_claim
-local function validate_lifetime(jwt_obj, leeway, require_nbf_claim, require_exp_claim)
-  local exp = jwt_obj[str_const.payload][str_const.exp]
-  local nbf = jwt_obj[str_const.payload][str_const.nbf]
-
-  if (leeway ~= nil and exp == nil and nbf == nil) then
-    error( { reason = "jwt lacks both 'exp' and 'nbf' claims." } )
-  end
-
-  leeway = leeway or 0
-  local now = ngx.now()
-
-  if exp == nil and require_exp_claim == true then
-    error( { reason = "jwt lacks the 'exp' claim." } )
-  end
-
-  if exp ~= nil then
-    if (not is_nil_or_positive_number(exp)) then
-      error( { reason = "jwt 'exp' claim is malformed. Expected to be a positive numeric value." } )
-    end
-
-    if exp < (now - leeway) then
-      error( { reason = "jwt token expired at: " .. ngx.http_time(exp) } )
-    end
-  end
-
-  if nbf == nil and require_nbf_claim == true then
-    error( { reason = "jwt lacks the 'nbf' claim." } )
-  end
-
-  if nbf ~= nil then
-    if (not is_nil_or_positive_number(nbf)) then
-      error( { reason = "jwt 'nbf' claim is malformed. Expected to be a positive numeric value." } )
-    end
-
-    if nbf > (now + leeway) then
-      error( { reason = "jwt token not valid until: " .. ngx.http_time(nbf) } )
-    end
-  end
-end
-
---@function validate issuers - ensure issuer belong to a whitelist
---@param jwt_obj, validation_options
-local function validate_iss(jwt_obj, valid_issuers)
-  if valid_issuers == nil then
-    return
-  end
-
-  local issuer = jwt_obj[str_const.payload][str_const.iss]
-
-  if issuer == nil then
-    error( { reason = "jwt lacks the 'iss' claim." } )
-  end
-
-  if type(issuer) ~= str_const.string then
-    error( { reason = "jwt 'iss' claim is malformed. Expected to be a string." } )
-  end
-
-  for i, valid_issuer in ipairs(valid_issuers) do
-    if issuer == valid_issuer then
-       return
-    end
-  end
-
-  error( { reason = "jwt 'iss' claim doesn't belong to the list of valid issuers." } )
-end
-
-local function apply_validators(jwt_obj, validators)
-  if jwt_obj[str_const.reason] ~= nil then
-    return false
-  end
-
-  for i, validator in ipairs(validators) do
-    local success, ret = pcall(validator, jwt_obj)
-
-    if not success then
-      jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.*: ", "")
-      return false
-    end
-  end
-
-  return true
-end
-
 --@function verify jwe object
 --@param secret
 --@param jwt object
@@ -696,44 +571,25 @@ local function extract_certificate(jwt_obj, x5u_content_retriever)
   -- TODO - Implement jwk and kid based models...
 end
 
-local function get_validators_from_legacy_options(self, options)
-  ngx.log(ngx.WARN, "Using *DEPRECATED* legacy validation options")
-  
-  if options == nil then
-    options = self.get_default_validation_options()
-  end
-
-  if type(options) ~= str_const.table then
-    error("'options' is expected to be a table")
-  end
-
-  local known_options = { }
-  known_options[str_const.valid_issuers]=1
-  known_options[str_const.lifetime_grace_period]=1
-  known_options[str_const.require_nbf_claim]=1
-  known_options[str_const.require_exp_claim]=1
-
-  for k in pairs(options) do
-    if known_options[k] == nil then
-      error(string.format("'%s' isn't a valid option name", k))
-    end
-  end
-
-  local validators = { }
-
-  ensure_is_table_of_strings_or_nil(
-      string.format("'%s' validation option", str_const.valid_issuers),
-      options[str_const.valid_issuers])
+local function get_claim_spec_from_legacy_options(self, options)
+  local claim_spec = { }
+  local jwt_validators = require "resty.jwt-validators"
 
   if options[str_const.valid_issuers] ~= nil then
-    table.insert(validators,
-      function (jwt_obj)
-        validate_iss(jwt_obj, options[str_const.valid_issuers])
-      end)
+    claim_spec[str_const.iss] = jwt_validators.equals_any_of(options[str_const.valid_issuers])
   end
 
-  if not is_nil_or_positive_number(options[str_const.lifetime_grace_period]) then
-    error(string.format("'%s' validation option is expected to be zero or a positive number of seconds.", str_const.lifetime_grace_period))
+  if options[str_const.lifetime_grace_period] ~= nil then
+    jwt_validators.set_system_leeway(options[str_const.lifetime_grace_period] or 0)    
+
+    -- If we have a leeway set, then either an NBF or an EXP should also exist requireds are added below
+    if options[str_const.require_nbf_claim] ~= true and options[str_const.require_exp_claim] ~= true then
+      claim_spec[str_const.full_obj] = function(val)
+        if val.payload[str_const.nbf] == nil and val.payload[str_const.exp] == nil then
+          error("Both 'nbf' and 'exp' are missing.")
+        end
+      end
+    end
   end
 
   if not is_nil_or_boolean(options[str_const.require_nbf_claim]) then
@@ -745,56 +601,82 @@ local function get_validators_from_legacy_options(self, options)
   end
 
   if options[str_const.lifetime_grace_period] ~= nil or options[str_const.require_nbf_claim] ~= nil or options[str_const.require_exp_claim] ~= nil then
-    table.insert(validators,
-      function (jwt_obj)
-        validate_lifetime(jwt_obj, options[str_const.lifetime_grace_period], options[str_const.require_nbf_claim], options[str_const.require_exp_claim])
-      end)
+    if options[str_const.require_nbf_claim] == true then
+      claim_spec[str_const.nbf] = jwt_validators.is_not_before()
+    else
+      claim_spec[str_const.nbf] = jwt_validators.opt_is_not_before()
+    end
+
+    if options[str_const.require_exp_claim] == true then
+      claim_spec[str_const.exp] = jwt_validators.is_not_expired()
+    else
+      claim_spec[str_const.exp] = jwt_validators.opt_is_not_expired()
+    end
   end
 
-  return validators
+  return claim_spec
 end
 
 local function is_legacy_validation_options(options)
-  local known_options = { }
-  known_options[str_const.valid_issuers]=1
-  known_options[str_const.lifetime_grace_period]=1
-  known_options[str_const.require_nbf_claim]=1
-  known_options[str_const.require_exp_claim]=1
 
+  -- Validation options MUST be a table
+  if type(options) ~= str_const.table then 
+    return false
+  end
+
+  -- Validation options MUST have at least one of these, and must ONLY have these
+  local legacy_options = { }
+  legacy_options[str_const.valid_issuers]=1
+  legacy_options[str_const.lifetime_grace_period]=1
+  legacy_options[str_const.require_nbf_claim]=1
+  legacy_options[str_const.require_exp_claim]=1
+
+  local is_legacy = false
   for k in pairs(options) do
-    if known_options[k] ~= nil then
-      return true
+    if legacy_options[k] ~= nil then
+      is_legacy = true
+    else
+      return false
     end
   end
-  return false
+  return is_legacy
 end
 
+-- Validates the claims for the given (parsed) object
 local function validate_claims(self, jwt_obj, ...)
   local claim_specs = {...}
-  local validators = { }
+
+  if jwt_obj[str_const.reason] ~= nil then
+    return false
+  end
+
+  -- Encode the current jwt_obj and use it when calling the individual validation functions
+  local jwt_json = cjson_encode(jwt_obj)
   
-  -- Figure out if we are operating in "legacy" mode
-  if #claim_specs == 1 and is_legacy_validation_options(claim_specs[1]) then
-    validators = get_validators_from_legacy_options(self, claim_specs[1])
-  else
-    -- Encode the current jwt_obj and use it when calling the individual validators
-    local jwt_json = cjson_encode(jwt_obj)
-    for i, v in ipairs(claim_specs) do
-      for claim, fx in pairs(v) do
-        if type(fx) ~= str_const.funct then
-          error("Claim spec value must be a function - see jwt-validators.lua for helper functions")
-        end
-        table.insert(validators, function (_jwt_obj)
-          local val = claim == str_const.full_obj and cjson_decode(jwt_json) or _jwt_obj.payload[claim]
-          if fx(val, claim, jwt_json) == false then
-            error({ reason = string.format("Claim '%s' ('%s') returned failure", claim, val) })
-          end
-        end)
+  -- Validate all our specs
+  for _, claim_spec in ipairs(claim_specs) do
+    if is_legacy_validation_options(claim_spec) then
+      claim_spec = get_claim_spec_from_legacy_options(self, claim_spec)
+    end
+    for claim, fx in pairs(claim_spec) do
+      if type(fx) ~= str_const.funct then
+        error("Claim spec value must be a function - see jwt-validators.lua for helper functions")
+      end
+      
+      local val = claim == str_const.full_obj and cjson_decode(jwt_json) or jwt_obj.payload[claim]
+      local success, ret = pcall(fx, val, claim, jwt_json)
+      if not success then
+        jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.*: ", "")
+        return false
+      elseif ret == false then
+        jwt_obj[str_const.reason] = string.format("Claim '%s' ('%s') returned failure", claim, val)
+        return false
       end
     end
   end
   
-  return apply_validators(jwt_obj, validators)
+  -- Everything was good
+  return true
 end
 
 --@function verify jwt object

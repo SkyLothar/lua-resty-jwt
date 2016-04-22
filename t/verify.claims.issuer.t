@@ -61,7 +61,7 @@ everything is awesome~ :p
 GET /t
 --- error_code: 500
 --- error_log
-'valid_issuers' validation option is expected to be a table.
+Cannot create validator for non-table check_values
 [error]
 
 
@@ -86,7 +86,7 @@ GET /t
 GET /t
 --- error_code: 500
 --- error_log
-'valid_issuers' validation option is expected to be a non empty table.
+Cannot create validator for empty table check_values
 [error]
 
 
@@ -111,7 +111,7 @@ GET /t
 GET /t
 --- error_code: 500
 --- error_log
-'valid_issuers' validation option is expected to be a table only containing strings.
+Cannot create validator for non-string table check_values
 [error]
 
 
@@ -136,7 +136,7 @@ GET /t
 GET /t
 --- response_body
 false
-jwt lacks the 'iss' claim.
+'iss' claim is required.
 --- no_error_log
 [error]
 
@@ -162,7 +162,7 @@ jwt lacks the 'iss' claim.
 GET /t
 --- response_body
 false
-jwt 'iss' claim is malformed. Expected to be a string.
+'iss' is malformed.  Expected to be a string.
 --- no_error_log
 [error]
 
@@ -188,7 +188,7 @@ jwt 'iss' claim is malformed. Expected to be a string.
 GET /t
 --- response_body
 false
-jwt 'iss' claim doesn't belong to the list of valid issuers.
+Claim 'iss' ('hello') returned failure
 --- no_error_log
 [error]
 
