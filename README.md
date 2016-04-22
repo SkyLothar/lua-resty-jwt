@@ -207,24 +207,13 @@ The parameter should be expressed as a key/value table. Each key of the table sh
 
   * `iss` claim is expected to be expressed in the jwt as a string. Wouldn't that be the case, verification will fail.
 
-* `claims`: Table of other claims to check in the form of:
-```
-{ 
-    claim: function_or_string
-    ...
-}
-```
-
- * When this validation option is specified, all claims listed as a key (`claim` in the above example) will be required.  The value of that claim will be matched (using string.match) if `function_or_string` is a string, or the value will be passed as a single parameter to `function_or_string` if it is a function.  When processed as a function, your function can either throw an error *or* `return false` to indicate that the check failed.  If no error is thrown, and `false` is not returned, then only the existence of the value is validated.
-
 ### sample of validation_options usage ###
 ```
 local jwt_obj = jwt:verify(key, jwt_token,
     {
         lifetime_grace_period = 120,
         require_exp_claim = true,
-        valid_issuers = { "my-trusted-issuer", "my-other-trusteed-issuer" },
-        claims = { sub = "My Test Subject" }
+        valid_issuers = { "my-trusted-issuer", "my-other-trusteed-issuer" }
     }
 )
 ```
