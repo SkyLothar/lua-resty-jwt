@@ -14,7 +14,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: JWT without iss claim without valid_issuers requirement
+=== TEST 1: JWT without iss claim without iss requirement
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -40,18 +40,19 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 2: JWT without iss claim with malformed valid_issuers requirement
+=== TEST 2: JWT without iss claim with malformed iss requirement
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
                 ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
-                { valid_issuers = 17 }
+                { iss = validators.equals_any_of(17) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -65,18 +66,19 @@ Cannot create validator for non-table check_values
 [error]
 
 
-=== TEST 3: JWT without iss claim with malformed valid_issuers requirement - Take 2
+=== TEST 3: JWT without iss claim with malformed iss requirement - Take 2
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
                 ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
-                { valid_issuers = { } }
+                { iss = validators.equals_any_of({ }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -90,18 +92,19 @@ Cannot create validator for empty table check_values
 [error]
 
 
-=== TEST 4: JWT without iss claim with malformed valid_issuers requirement - Take 3
+=== TEST 4: JWT without iss claim with malformed iss requirement - Take 3
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
                 ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
-                { valid_issuers = { "a", "b", true } }
+                { iss = validators.equals_any_of({ "a", "b", true }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -115,18 +118,19 @@ Cannot create validator for non-string table check_values
 [error]
 
 
-=== TEST 5: JWT without iss claim while valid_issuers specified
+=== TEST 5: JWT without iss claim while iss specified
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIifQ" ..
                 ".VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY",
-                { valid_issuers = { "a", "b" } }
+                { iss = validators.equals_any_of({ "a", "b" }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -141,18 +145,19 @@ false
 [error]
 
 
-=== TEST 6: JWT with malformed iss claim ("iss": 17) while valid_issuers specified
+=== TEST 6: JWT with malformed iss claim ("iss": 17) while iss specified
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJpc3MiOjE3fQ" ..
                 ".IYbJt_WGO_2pIM0Mh19HbP5W0y1i9CGw4PNQqjHeIx0",
-                { valid_issuers = { "a", "b" } }
+                { iss = validators.equals_any_of({ "a", "b" }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -167,18 +172,19 @@ false
 [error]
 
 
-=== TEST 7: JWT with valid but unknown iss claim ("iss": "hello") while valid_issuers specified
+=== TEST 7: JWT with valid but unknown iss claim ("iss": "hello") while iss specified
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJpc3MiOiJoZWxsbyJ9" ..
                 ".d8P9QJIJG2LSgQrLOfADw7WqGugRSD3xl-nmZ0FpmC8",
-                { valid_issuers = { "a", "b" } }
+                { iss = validators.equals_any_of({ "a", "b" }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -193,18 +199,19 @@ Claim 'iss' ('hello') returned failure
 [error]
 
 
-=== TEST 8: JWT with valid iss claim ("iss": "hello") while valid_issuers specified
+=== TEST 8: JWT with valid iss claim ("iss": "hello") while iss specified
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJpc3MiOiJoZWxsbyJ9" ..
                 ".d8P9QJIJG2LSgQrLOfADw7WqGugRSD3xl-nmZ0FpmC8",
-                { valid_issuers = { "hello" } }
+                { iss = validators.equals_any_of({ "hello" }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -219,18 +226,19 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 9: JWT with valid iss claim ("iss": "hello") while valid_issuers specified
+=== TEST 9: JWT with valid iss claim ("iss": "hello") while iss specified
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJpc3MiOiJoZWxsbyJ9" ..
                 ".d8P9QJIJG2LSgQrLOfADw7WqGugRSD3xl-nmZ0FpmC8",
-                { valid_issuers = { "hello", "a" } }
+                { iss = validators.equals_any_of({ "hello", "a" }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -245,18 +253,19 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 10: JWT with valid iss claim ("iss": "hello") while valid_issuers specified
+=== TEST 10: JWT with valid iss claim ("iss": "hello") while iss specified
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
                 ".eyJmb28iOiJiYXIiLCJpc3MiOiJoZWxsbyJ9" ..
                 ".d8P9QJIJG2LSgQrLOfADw7WqGugRSD3xl-nmZ0FpmC8",
-                { valid_issuers = { "a", "hello" } }
+                { iss = validators.equals_any_of({ "a", "hello" }) }
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
