@@ -1238,10 +1238,10 @@ false
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
 true
-false
+'future' claim not valid until Wed, 21 Apr 2100 22:09:58 GMT
 --- no_error_log
 [error]
 
@@ -1352,7 +1352,7 @@ clock function must return a non-negative number
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
 true
 true
@@ -1382,11 +1382,11 @@ true
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
 true
 true
-false
+'future' claim not valid until Fri, 21 Apr 2000 22:10:00 GMT
 --- no_error_log
 [error]
 
@@ -1415,7 +1415,7 @@ false
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
 true
 true
@@ -1444,10 +1444,10 @@ true
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 'blah' claim is required.
 true
-false
+'future' claim not valid until Wed, 21 Apr 2100 22:09:58 GMT
 --- no_error_log
 [error]
 
@@ -1472,9 +1472,9 @@ false
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
-false
+'past' claim expired at Fri, 21 Apr 2000 22:09:58 GMT
 true
 --- no_error_log
 [error]
@@ -1501,7 +1501,7 @@ true
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
 true
 true
@@ -1531,10 +1531,10 @@ true
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
-false
-false
+'past' claim expired at Fri, 21 Apr 2000 22:09:58 GMT
+'now' claim expired at Fri, 21 Apr 2000 22:09:59 GMT
 true
 --- no_error_log
 [error]
@@ -1564,9 +1564,9 @@ true
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 true
-false
+'past' claim expired at Fri, 21 Apr 2000 22:09:58 GMT
 true
 true
 --- no_error_log
@@ -1593,9 +1593,9 @@ true
 --- request
 GET /t
 --- response_body
-'foo' is malformed.  Expected to be a number.
+'foo' is malformed.  Expected to be a positive numeric value.
 'blah' claim is required.
-false
+'past' claim expired at Fri, 21 Apr 2000 22:09:58 GMT
 true
 --- no_error_log
 [error]

@@ -294,6 +294,24 @@ function _M.set_system_clock(clock)
   system_clock = clock
 end
 
+-- Local helper function for date validation
+local function validate_is_date(val, claim, jwt_json)
+  ensure_is_non_negative(val, messages.wrong_type_claim, claim, "positive numeric value")
+  return true
+end
+
+-- Local helper for date formatting
+local function format_date_on_error(date_check_function, error_msg)
+  ensure_is_type(date_check_function, "function", messages.wrong_type_validator, "function", "date_check_function")
+  ensure_is_type(error_msg, "string", messages.wrong_type_validator, "string", error_msg)
+  return function(val, claim, jwt_json)
+    local ret = date_check_function(val, claim, jwt_json)
+    if ret == false then
+      error(string.format("'%s' claim %s %s", claim, error_msg, ngx.http_time(val)))
+    end
+    return true
+  end
+end
 
 --[[
     Returns a validator that checks if the current time is not before the tested value
@@ -301,7 +319,10 @@ end
       val <= (system_clock() + system_leeway).
 ]]--
 define_validator("is_not_before", function()
-  return _M.opt_less_than_or_equal(system_clock() + system_leeway)
+  return format_date_on_error(
+    _M.chain(validate_is_date, _M.opt_less_than_or_equal(system_clock() + system_leeway)),
+    "not valid until"
+  )
 end)
 
 
@@ -311,7 +332,10 @@ end)
       val > (system_clock() - system_leeway).
 ]]--
 define_validator("is_not_expired", function()
-  return _M.opt_greater_than(system_clock() - system_leeway)
+  return format_date_on_error(
+    _M.chain(validate_is_date, _M.opt_greater_than(system_clock() - system_leeway)),
+    "expired at"
+  )
 end)
 
 
