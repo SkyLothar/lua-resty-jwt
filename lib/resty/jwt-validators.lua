@@ -33,12 +33,12 @@ end
 
 -- Validation messages
 local messages = {
-  nil_validator = "Cannot create validator for nil %s",
-  wrong_type_validator = "Cannot create validator for non-%s %s",
-  empty_table_validator = "Cannot create validator for empty table %s",
-  wrong_table_type_validator = "Cannot create validator for non-%s table %s",
+  nil_validator = "Cannot create validator for nil %s.",
+  wrong_type_validator = "Cannot create validator for non-%s %s.",
+  empty_table_validator = "Cannot create validator for empty table %s.",
+  wrong_table_type_validator = "Cannot create validator for non-%s table %s.",
   required_claim = "'%s' claim is required.",
-  wrong_type_claim = "'%s' is malformed.  Expected to be a %s."
+  wrong_type_claim = "'%s' is malformed.  Expected to be a %s.",
 }
 
 -- Local function to make sure that a value is non-nil or raises an error
@@ -153,12 +153,13 @@ end
 
 --[[
     Returns a validator that checks if the result of calling the given function for
-    the tested value and the check value returns true.  If the tested value is nil, 
-    then this check succeeds.  The value of check_val and check_function cannot be nil.
-    The optional name is used for error messages and defaults to "check_value".  The 
-    optional check_type is used to make sure that the check type matches and defaults
-    to type(check_val).  The first parameter passed to check_function will *never* be
-    nil (check succeeds if value is nil).  Use the required version to fail on nil.
+    the tested value and the check value returns true.  The value of check_val and 
+    check_function cannot be nil.  The optional name is used for error messages and 
+    defaults to "check_value".  The optional check_type is used to make sure that 
+    the check type matches and defaults to type(check_val).  The first parameter 
+    passed to check_function will *never* be nil (check succeeds if value is nil).  
+    Use the required version to fail on nil.  If the check_function raises an 
+    error, that will be appended to the error message.
 ]]--
 define_validator("check", function(check_val, check_function, name, check_type)
   name = name or "check_val"
@@ -188,8 +189,8 @@ end)
 
 
 --[[
-    Returns a validator that checks if a value matches the given pattern.  If the
-    value is nil, then this check succeeds.  The value of pattern must be a string.
+    Returns a validator that checks if a value matches the given pattern.  The value 
+    of pattern must be a string.
 ]]--
 define_validator("matches", function (pattern)
   ensure_is_type(pattern, "string", messages.wrong_type_validator, "string", "pattern")
@@ -200,11 +201,11 @@ end)
 --[[
     Returns a validator which calls the given function for each of the given values
     and the tested value.  If any of these calls return true, then this function
-    returns true.  If the tested value is nil, then this check succeeds.  The value
-    of check_values must be a non-empty table with all the same types, and the value 
-    of check_function must not be nil.  The optional name is used for error messages 
-    and defaults to "check_values".  The optional check_type is used to make sure that 
-    the check type matches and defaults to type(check_values[1]) - the table type.
+    returns true.  The value of check_values must be a non-empty table with all the 
+    same types, and the value of check_function must not be nil.  The optional name 
+    is used for error messages and defaults to "check_values".  The optional 
+    check_type is used to make sure that the check type matches and defaults to 
+    type(check_values[1]) - the table type.
 ]]--
 define_validator("any_of", function(check_values, check_function, name, check_type, table_type)
   name = name or "check_values"
@@ -230,7 +231,6 @@ end)
 
 --[[
     Returns a validator that checks if a value exactly equals any of the given values.
-    If the value is nil, then this check succeeds.
 ]]--
 define_validator("equals_any_of", function(check_values)
   return _M.opt_any_of(check_values, equality_function, "check_values")
@@ -239,7 +239,6 @@ end)
 
 --[[
     Returns a validator that checks if a value matches any of the given patterns.
-    If the value is nil, then this check succeeds.
 ]]--
 define_validator("matches_any_of", function(patterns)
   return _M.opt_any_of(patterns, string_match_function, "patterns", "string", "string")
@@ -248,8 +247,7 @@ end)
 
 --[[
     Returns a validator that checks how a value compares (numerically) to a given 
-    check_value.  If the value is nil, then this check succeeds.  The value of 
-    check_val cannot be nil and must be a number.
+    check_value.  The value of check_val cannot be nil and must be a number.
 ]]--
 define_validator("greater_than", function(check_val)
   ensure_is_type(check_val, "number", messages.wrong_type_validator, "number", "check_val")
@@ -301,7 +299,6 @@ end
     Returns a validator that checks if the current time is not before the tested value
     within the system's leeway.  This means that:
       val <= (system_clock() + system_leeway).
-    If the value is nil, then this check succeeds.
 ]]--
 define_validator("is_not_before", function()
   return _M.opt_less_than_or_equal(system_clock() + system_leeway)
@@ -312,7 +309,6 @@ end)
     Returns a validator that checks if the current time is not equal to or after the 
     tested value within the system's leeway.  This means that:
       val > (system_clock() - system_leeway).
-    If the value is nil, then this check succeeds.
 ]]--
 define_validator("is_not_expired", function()
   return _M.opt_greater_than(system_clock() - system_leeway)

@@ -102,7 +102,7 @@ false
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-function chain_function
+Cannot create validator for non-function chain_function.
 --- no_error_log
 [error]
 
@@ -152,7 +152,7 @@ true
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-function check_function
+Cannot create validator for non-function check_function.
 --- no_error_log
 [error]
 
@@ -170,8 +170,8 @@ Cannot create validator for non-function check_function
 --- request
 GET /t
 --- response_body
-Cannot create validator for nil my_name
-Cannot create validator for nil check_val
+Cannot create validator for nil my_name.
+Cannot create validator for nil check_val.
 --- no_error_log
 [error]
 
@@ -399,7 +399,7 @@ true
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-string pattern
+Cannot create validator for non-string pattern.
 --- no_error_log
 [error]
 
@@ -550,7 +550,7 @@ true
 --- request
 GET /t
 --- response_body
-Cannot create validator for empty table my_name
+Cannot create validator for empty table my_name.
 --- no_error_log
 [error]
 
@@ -568,7 +568,7 @@ Cannot create validator for empty table my_name
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-table my_name
+Cannot create validator for non-table my_name.
 --- no_error_log
 [error]
 
@@ -586,7 +586,7 @@ Cannot create validator for non-table my_name
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-string table my_name
+Cannot create validator for non-string table my_name.
 --- no_error_log
 [error]
 
@@ -696,7 +696,7 @@ true
 --- request
 GET /t
 --- response_body
-Cannot create validator for empty table check_values
+Cannot create validator for empty table check_values.
 --- no_error_log
 [error]
 
@@ -714,7 +714,7 @@ Cannot create validator for empty table check_values
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-table check_values
+Cannot create validator for non-table check_values.
 --- no_error_log
 [error]
 
@@ -732,7 +732,7 @@ Cannot create validator for non-table check_values
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-string table check_values
+Cannot create validator for non-string table check_values.
 --- no_error_log
 [error]
 
@@ -805,7 +805,7 @@ true
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-string table patterns
+Cannot create validator for non-string table patterns.
 --- no_error_log
 [error]
 
@@ -823,7 +823,7 @@ Cannot create validator for non-string table patterns
 --- request
 GET /t
 --- response_body
-Cannot create validator for empty table patterns
+Cannot create validator for empty table patterns.
 --- no_error_log
 [error]
 
@@ -841,7 +841,7 @@ Cannot create validator for empty table patterns
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-table patterns
+Cannot create validator for non-table patterns.
 --- no_error_log
 [error]
 
@@ -859,7 +859,7 @@ Cannot create validator for non-table patterns
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-string table patterns
+Cannot create validator for non-string table patterns.
 --- no_error_log
 [error]
 
@@ -877,7 +877,7 @@ Cannot create validator for non-string table patterns
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-string table patterns
+Cannot create validator for non-string table patterns.
 --- no_error_log
 [error]
 
@@ -952,7 +952,7 @@ true
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-number check_val
+Cannot create validator for non-number check_val.
 --- no_error_log
 [error]
 
@@ -1029,7 +1029,7 @@ true
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-number check_val
+Cannot create validator for non-number check_val.
 --- no_error_log
 [error]
 
@@ -1106,7 +1106,7 @@ false
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-number check_val
+Cannot create validator for non-number check_val.
 --- no_error_log
 [error]
 
@@ -1183,7 +1183,7 @@ false
 --- request
 GET /t
 --- response_body
-Cannot create validator for non-number check_val
+Cannot create validator for non-number check_val.
 --- no_error_log
 [error]
 
