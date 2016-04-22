@@ -1218,7 +1218,7 @@ false
 [error]
 
 
-=== TEST 47: Validator.is_not_before
+=== TEST 48: Validator.is_not_before
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1246,13 +1246,99 @@ false
 [error]
 
 
-=== TEST 48: Validator.is_not_before with leeway
+=== TEST 49: Validator.set_system_leeway invalid leeway
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_before(3153600000)
+            __runSay(validators.set_system_leeway, "abc")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+leeway must be a non-negative number
+--- no_error_log
+[error]
+
+
+=== TEST 50: Validator.set_system_leeway negative leeway
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.set_system_leeway, -1)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+leeway must be a non-negative number
+--- no_error_log
+[error]
+
+
+=== TEST 51: Validator.set_system_clock invalid
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.set_system_clock, "abc")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+clock must be a function
+--- no_error_log
+[error]
+
+
+=== TEST 52: Validator.set_system_clock returns invalid time
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.set_system_clock, function() return "abc" end)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+clock function must return a non-negative number
+--- no_error_log
+[error]
+
+
+=== TEST 53: Validator.set_system_clock returns negative time
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.set_system_clock, function() return -1 end)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+clock function must return a non-negative number
+--- no_error_log
+[error]
+
+
+=== TEST 54: Validator.is_not_before with leeway
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            validators.set_system_leeway(3153600000)
+            local tval = validators.is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1274,13 +1360,14 @@ true
 [error]
 
 
-=== TEST 49: Validator.is_not_before specific time
+=== TEST 55: Validator.is_not_before specific time
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_before(0, 956354999)
+            validators.set_system_clock(function() return 956354999 end)
+            local tval = validators.is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
@@ -1305,13 +1392,15 @@ false
 
 
 
-=== TEST 50: Validator.is_not_before specific time and leeway
+=== TEST 56: Validator.is_not_before specific time and leeway
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_before(1, 956354999)
+            validators.set_system_leeway(1)
+            validators.set_system_clock(function() return 956354999 end)
+            local tval = validators.is_not_before()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
@@ -1335,75 +1424,7 @@ true
 [error]
 
 
-=== TEST 51: Validator.is_not_before invalid leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_before, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number leeway
---- no_error_log
-[error]
-
-
-=== TEST 52: Validator.is_not_before negative leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_before, -1)
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator with negative leeway
---- no_error_log
-[error]
-
-
-=== TEST 53: Validator.is_not_before invalid time
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_before, 0, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number now
---- no_error_log
-[error]
-
-
-=== TEST 54: Validator.is_not_before negative time
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_before, 0, -1)
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator with negative now
---- no_error_log
-[error]
-
-
-=== TEST 55: Validator.required_is_not_before
+=== TEST 57: Validator.required_is_not_before
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1431,13 +1452,13 @@ false
 [error]
 
 
-=== TEST 56: Validator.is_not_after
+=== TEST 58: Validator.is_not_expired
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_after()
+            local tval = validators.is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1459,13 +1480,14 @@ true
 [error]
 
 
-=== TEST 57: Validator.is_not_after with leeway
+=== TEST 59: Validator.is_not_expired with leeway
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_after(3153600000)
+            validators.set_system_leeway(3153600000)
+            local tval = validators.is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }
@@ -1487,13 +1509,47 @@ true
 [error]
 
 
-=== TEST 58: Validator.is_not_after specific time
+=== TEST 60: Validator.is_not_expired specific time
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_after(0, 956354999)
+            validators.set_system_clock(function() return 956354999 end)
+            local tval = validators.is_not_expired()
+            local obj = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
+            }
+            __testValidator(tval, "foo", obj)
+            __testValidator(tval, "blah", obj)
+            __testValidator(tval, "past", obj)
+            __testValidator(tval, "now", obj)
+            __testValidator(tval, "future", obj)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+'foo' is malformed.  Expected to be a number.
+true
+false
+false
+true
+--- no_error_log
+[error]
+
+
+
+=== TEST 61: Validator.is_not_expired specific time and leeway
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            validators.set_system_leeway(1)
+            validators.set_system_clock(function() return 956354999 end)
+            local tval = validators.is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
@@ -1517,112 +1573,13 @@ true
 [error]
 
 
-
-=== TEST 59: Validator.is_not_after specific time and leeway
+=== TEST 62: Validator.required_is_not_expired
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            local tval = validators.is_not_after(1, 956354999)
-            local obj = {
-              header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", past=956354998, now=956354999, future=956355000 }
-            }
-            __testValidator(tval, "foo", obj)
-            __testValidator(tval, "blah", obj)
-            __testValidator(tval, "past", obj)
-            __testValidator(tval, "now", obj)
-            __testValidator(tval, "future", obj)
-        ';
-    }
---- request
-GET /t
---- response_body
-'foo' is malformed.  Expected to be a number.
-true
-true
-true
-true
---- no_error_log
-[error]
-
-
-=== TEST 60: Validator.is_not_after invalid leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_after, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number leeway
---- no_error_log
-[error]
-
-
-=== TEST 61: Validator.is_not_after negative leeway
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_after, -1)
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator with negative leeway
---- no_error_log
-[error]
-
-
-=== TEST 62: Validator.is_not_after invalid time
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_after, 0, "abc")
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator for non-number now
---- no_error_log
-[error]
-
-
-=== TEST 63: Validator.is_not_after negative time
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            __runSay(validators.is_not_after, 0, -1)
-        ';
-    }
---- request
-GET /t
---- response_body
-Cannot create validator with negative now
---- no_error_log
-[error]
-
-
-=== TEST 64: Validator.required_is_not_after
---- http_config eval: $::HttpConfig
---- config
-    location /t {
-        content_by_lua '
-            local validators = require "resty.jwt-validators"
-            local tval = validators.required_is_not_after()
+            local tval = validators.required_is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
               payload = { foo="bar", past=956354998, future=4112028598 }

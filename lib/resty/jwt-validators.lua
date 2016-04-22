@@ -27,7 +27,6 @@ local messages = {
   wrong_type_validator = "Cannot create validator for non-%s %s",
   empty_table_validator = "Cannot create validator for empty table %s",
   wrong_table_type_validator = "Cannot create validator for non-%s table %s",
-  non_neg_validator = "Cannot create validator with negative %s",
   required_claim = "'%s' claim is required.",
   wrong_type_claim = "'%s' is malformed.  Expected to be a %s."
 }
@@ -99,24 +98,6 @@ end
 -- A local function which returns numeric less than or equal comparison
 local function less_than_or_equal_function(val, check)
   return val <= check
-end
-
--- A local function that normalizes the leeway
-local function normalize_leeway(leeway)
-  leeway = leeway or 0
-  ensure_not_nil(leeway, messages.nil_validator, "leeway")
-  ensure_is_type(leeway, "number", messages.wrong_type_validator, "number", "leeway")
-  ensure_is_non_negative(leeway, messages.non_neg_validator, "leeway")
-  return leeway
-end
-
--- A local function that normalizes the now
-local function normalize_now(now)
-  now = now or ngx.now()
-  ensure_not_nil(now, messages.nil_validator, "now")
-  ensure_is_type(now, "number", messages.wrong_type_validator, "number", "now")
-  ensure_is_non_negative(now, messages.non_neg_validator, "now")
-  return now
 end
 
 
@@ -282,37 +263,57 @@ function _M.required_less_than_or_equal(...) return _M.required(_M.less_than_or_
 
 
 --[[
-    Returns a validator that checks if the current time is not before the tested value.
-    This means that val <= (time + leeway).  If the value is nil, then this check 
-    succeeds.  The leeway value is a positive number, specified in seconds, and if not 
-    specified, then 0 is used.  If the optional now value is not specified, then 
-    ngx.now() is used.
+    A function to set the leeway (in seconds) used for is_not_before and is_not_expired.  The
+    default is to use 0 seconds
 ]]--
-function _M.is_not_before(leeway, now)
-  leeway = normalize_leeway(leeway)
-  now = normalize_now(now)
+local system_leeway = 0
+function _M.set_system_leeway(leeway)
+  ensure_is_type(leeway, "number", "leeway must be a non-negative number")
+  ensure_is_non_negative(leeway, "leeway must be a non-negative number")
+  system_leeway = leeway
+end
+
+
+--[[
+    A function to set the system clock used for is_not_before and is_not_expired.  The
+    default is to use ngx.now
+]]--
+local system_clock = ngx.now
+function _M.set_system_clock(clock)
+  ensure_is_type(clock, "function", "clock must be a function")
   
-  return _M.less_than_or_equal(now + leeway)
+  -- Check that clock returns the correct value
+  local t = clock()
+  ensure_is_type(t, "number", "clock function must return a non-negative number")
+  ensure_is_non_negative(t, "clock function must return a non-negative number")
+  system_clock = clock
+end
+
+
+--[[
+    Returns a validator that checks if the current time is not before the tested value
+    within the system's leeway.  This means that:
+      val <= (system_clock() + system_leeway).
+    If the value is nil, then this check succeeds.
+]]--
+function _M.is_not_before()
+  return _M.less_than_or_equal(system_clock() + system_leeway)
 end
 -- And the required version
 function _M.required_is_not_before(...) return _M.required(_M.is_not_before(...)) end
 
 
 --[[
-    Returns a validator that checks if the current time is not after the tested value.
-    This means that val >= (time - leeway).  If the value is nil, then this check 
-    succeeds.  The leeway value is a positive number, specified in seconds, and if not 
-    specified, then 0 is used.  If the optional now value is not specified, then 
-    ngx.now() is used.
+    Returns a validator that checks if the current time is not equal to or after the 
+    tested value within the system's leeway.  This means that:
+      val > (system_clock() - system_leeway).
+    If the value is nil, then this check succeeds.
 ]]--
-function _M.is_not_after(leeway, now)
-  leeway = normalize_leeway(leeway)
-  now = normalize_now(now)
-  
-  return _M.greater_than_or_equal(now - leeway)
+function _M.is_not_expired()
+  return _M.greater_than(system_clock() - system_leeway)
 end
 -- And the required version
-function _M.required_is_not_after(...) return _M.required(_M.is_not_after(...)) end
+function _M.required_is_not_expired(...) return _M.required(_M.is_not_expired(...)) end
 
 
 return _M
