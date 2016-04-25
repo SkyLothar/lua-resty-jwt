@@ -267,8 +267,7 @@ Testing With Docker
 ===================
 
 ```
-docker build -t lua-resty-jwt .
-docker run --rm -it -v `pwd`:/lua-resty-jwt lua-resty-jwt make test
+docker-compose up
 ```
 
 [Back to TOC](#table-of-contents)
