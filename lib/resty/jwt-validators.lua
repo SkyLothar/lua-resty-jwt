@@ -11,11 +11,13 @@ local _M = {_VERSION="0.1.3"}
   validator returns nil, then it is assumed to have passed (same as returning true) and that you just forgot
   to actually return a value.
 
-  "val" is the value being tested.  It may be nil if the claim doesn't exist in the jwt_obj.  It will also be 
-  nil if the validator is being called for the full object.
+  There is a special claim name of "__jwt" that can be used to validate the entire jwt_obj.
+
+  "val" is the value being tested.  It may be nil if the claim doesn't exist in the jwt_obj.  If the function
+  is being called for the "__jwt" claim, then "val" will contain a deep clone of the full jwt object.
 
   "claim" is the claim that is being tested.  It is passed in just in case a validator needs to do additional
-  checks.  It will be nil if the validator is being called for the full object.
+  checks.  It will be the string "__jwt" if the validator is being called for the entire jwt_object.
 
   "jwt_json" is a json-encoded representation of the full object that is being tested.  It will never be nil,
   and can always be decoded using cjson.decode(jwt_json).

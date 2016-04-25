@@ -47,6 +47,7 @@ local str_const = {
   exp = "exp",
   nbf = "nbf",
   iss = "iss",
+  full_obj = "__jwt",
   AES = "AES",
   cbc = "cbc",
   x5c = "x5c",
@@ -784,7 +785,7 @@ local function validate_claims(self, jwt_obj, ...)
           error("Claim spec value must be a function - see jwt-validators.lua for helper functions")
         end
         table.insert(validators, function (_jwt_obj)
-          local val = _jwt_obj.payload[claim];
+          local val = claim == str_const.full_obj and cjson_decode(jwt_json) or _jwt_obj.payload[claim]
           if fx(val, claim, jwt_json) == false then
             error({ reason = string.format("Claim '%s' ('%s') returned failure", claim, val) })
           end

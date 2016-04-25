@@ -528,3 +528,87 @@ nil
 [error]
 
 
+=== TEST 18: JWT with sub claim and full-object validation claim
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
+            local cjson = require "cjson.safe"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                ".eyJmb28iOiJiYXIiLCJzdWIiOiJUZXN0IFN1YmplY3QifQ" ..
+                ".UDSQ6edgmmSR9Us53p7Mg2MvcsbVNLCQISJj-rE7zPI",
+                {
+                  __jwt = function(val, claim, jwt_json)
+                    if claim ~= "__jwt" then error("Claim is not __jwt") end
+                    if type(val) ~= "table" then error("Value is not a table") end
+                    ngx.say("Checking " .. val.payload.sub)
+                    return val.payload.sub == "Test Subject" and true or false
+                  end
+                }
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Checking Test Subject
+true
+everything is awesome~ :p
+--- no_error_log
+[error]
+
+
+=== TEST 19: JWT full-object verification that does "bad things" to the value
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
+            local cjson = require "cjson.safe"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                ".eyJmb28iOiJiYXIiLCJzdWIiOiJUZXN0IFN1YmplY3QifQ" ..
+                ".UDSQ6edgmmSR9Us53p7Mg2MvcsbVNLCQISJj-rE7zPI",
+                {
+                  __jwt = function(val, claim, jwt_json)
+                    ngx.say(val.payload["foo"])
+                    val.payload["BAD"] = true
+                    val["HELLO"] = "THERE"
+                    return val.payload.sub == "Test Subject" and true or false
+                  end
+                },
+                {
+                  __jwt = function(val, claim, jwt_json)
+                    ngx.say(val.payload["foo"])
+                    if val.payload["BAD"] then error("You have been poisoned!") end
+                    if val["HELLO"] then error ("HELLO " .. val["HELLO"]) end
+                  end
+                }
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj.payload["BAD"])
+            ngx.say(jwt_obj["HELLO"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+bar
+bar
+true
+everything is awesome~ :p
+nil
+nil
+--- no_error_log
+[error]
+
+
