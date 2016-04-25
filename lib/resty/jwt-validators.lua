@@ -365,4 +365,20 @@ define_validator("is_not_expired", function()
 end)
 
 
+--[[
+    Returns a validator that checks if the current time is the same as the tested value 
+    within the system's leeway.  This means that:
+      val >= (system_clock() - system_leeway) and val <= (system_clock() + system_leeway).
+]]--
+define_validator("is_at", function()
+  local now = system_clock()
+  return format_date_on_error(
+    _M.chain(validate_is_date, 
+             _M.opt_greater_than_or_equal(now - system_leeway),
+             _M.opt_less_than_or_equal(now + system_leeway)),
+    "is only valid at"
+  )
+end)
+
+
 return _M

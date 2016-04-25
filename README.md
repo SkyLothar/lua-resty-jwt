@@ -282,6 +282,12 @@ Returns a validator that checks if the current time is not equal to or after the
 val > (system_clock() - system_leeway).
 ```
 
+#### `validators.is_at()` (opt) ####
+Returns a validator that checks if the current time is the same as the tested value within the system's leeway.  This means that:
+```
+val >= (system_clock() - system_leeway) and val <= (system_clock() + system_leeway).
+```
+
 #### `validators.set_system_leeway(leeway)` ####
 A function to set the leeway (in seconds) used for `is_not_before` and `is_not_expired`.  The default is to use `0` seconds
 
