@@ -424,7 +424,7 @@ everything is awesome~ :p
 GET /t
 --- response_body
 false
-Both 'nbf' and 'exp' are missing.
+Missing one of claims - [ nbf, exp ].
 --- no_error_log
 [error]
 
@@ -450,7 +450,7 @@ Both 'nbf' and 'exp' are missing.
 GET /t
 --- response_body
 false
-Both 'nbf' and 'exp' are missing.
+Missing one of claims - [ nbf, exp ].
 --- no_error_log
 [error]
 

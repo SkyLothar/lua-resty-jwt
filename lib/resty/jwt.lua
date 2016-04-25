@@ -584,11 +584,7 @@ local function get_claim_spec_from_legacy_options(self, options)
 
     -- If we have a leeway set, then either an NBF or an EXP should also exist requireds are added below
     if options[str_const.require_nbf_claim] ~= true and options[str_const.require_exp_claim] ~= true then
-      claim_spec[str_const.full_obj] = function(val)
-        if val.payload[str_const.nbf] == nil and val.payload[str_const.exp] == nil then
-          error("Both 'nbf' and 'exp' are missing.")
-        end
-      end
+      claim_spec[str_const.full_obj] = jwt_validators.require_one_of({ str_const.nbf, str_const.exp })
     end
   end
 

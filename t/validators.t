@@ -7,6 +7,7 @@ plan tests => repeat_each() * (3 * blocks());
 our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
     init_by_lua '
+      local cjson = require "cjson.safe"
       function __runSay(fn, ...)
         local status, rslt = pcall(fn, ...)
         if status then
@@ -24,7 +25,11 @@ our $HttpConfig = <<'_EOC_';
         end
       end
       function __testValidator(validator, spec, obj)
-        __runSay(validator, obj.payload[spec], spec, obj)
+        if spec == "__jwt" then
+          __runSay(validator, obj, spec, cjson.encode(obj))
+        else
+          __runSay(validator, obj.payload[spec], spec, cjson.encode(obj))
+        end
       end
     ';
 _EOC_
@@ -1637,6 +1642,157 @@ false
 2 - nil
 3 - blah - nil
 ONLY BLAH
+--- no_error_log
+[error]
+
+
+=== TEST 64: Validator.require_one_of
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            local tval = validators.require_one_of({ "foo", "blah" })
+            local obj = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar" }
+            }
+            __testValidator(tval, "__jwt", obj)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+--- no_error_log
+[error]
+
+
+=== TEST 65: Validator.require_one_of no match
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            local tval = validators.require_one_of({ "blah", "baz" })
+            local obj = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar" }
+            }
+            __testValidator(tval, "__jwt", obj)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Missing one of claims - [ blah, baz ].
+--- no_error_log
+[error]
+
+
+=== TEST 66: Validator.require_one_of missing object
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            local tval = validators.require_one_of({ "foo", "blah" })
+            __testValidator(tval, "__jwt", nil)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+'__jwt' is malformed.  Expected to be a table.
+--- no_error_log
+[error]
+
+
+=== TEST 67: Validator.require_one_of missing payload
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            local tval = validators.require_one_of({ "foo", "blah" })
+            local obj = {
+              header = { type="JWT", alg="HS256" },
+            }
+            __testValidator(tval, "__jwt", obj)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+'__jwt.payload' is malformed.  Expected to be a table.
+--- no_error_log
+[error]
+
+
+=== TEST 68: Validator.require_one_of non-string keys
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.require_one_of, { "foo", true })
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-string table claim_keys.
+--- no_error_log
+[error]
+
+
+=== TEST 69: Validator.require_one_of empty keys
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.require_one_of, {})
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for empty table claim_keys.
+--- no_error_log
+[error]
+
+
+=== TEST 70: Validator.require_one_of invalid keys
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.require_one_of, "abc")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-table claim_keys.
+--- no_error_log
+[error]
+
+
+=== TEST 71: Validator.require_one_of missing keys
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.require_one_of)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for nil claim_keys.
 --- no_error_log
 [error]
 

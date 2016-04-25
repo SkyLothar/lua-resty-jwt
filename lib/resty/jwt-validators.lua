@@ -41,6 +41,7 @@ local messages = {
   wrong_table_type_validator = "Cannot create validator for non-%s table %s.",
   required_claim = "'%s' claim is required.",
   wrong_type_claim = "'%s' is malformed.  Expected to be a %s.",
+  missing_claim = "Missing one of claims - [ %s ]."
 }
 
 -- Local function to make sure that a value is non-nil or raises an error
@@ -150,6 +151,29 @@ function _M.required(chain_function)
   return function(val, claim, jwt_json)
     ensure_not_nil(val, messages.required_claim, claim)
     return true
+  end
+end
+
+--[[
+    Returns a validator which errors with a message if *NONE* of the given claim
+    keys exist.  It is expected that this function is used against a full jwt object.  
+    The claim_keys must be a non-empty table of strings.
+]]--
+function _M.require_one_of(claim_keys)
+  ensure_not_nil(claim_keys, messages.nil_validator, "claim_keys")
+  ensure_is_type(claim_keys, "table", messages.wrong_type_validator, "table", "claim_keys")
+  ensure_is_table(claim_keys, messages.empty_table_validator, "claim_keys")
+  ensure_is_table_type(claim_keys, "string", messages.wrong_table_type_validator, "string", "claim_keys")
+  
+  return function(val, claim, jwt_json)
+    ensure_is_type(val, "table", messages.wrong_type_claim, claim, "table")
+    ensure_is_type(val.payload, "table", messages.wrong_type_claim, claim .. ".payload", "table")
+    
+    for i, v in ipairs(claim_keys) do
+      if val.payload[v] ~= nil then return true end
+    end
+    
+    error(string.format(messages.missing_claim, table.concat(claim_keys, ", ")))
   end
 end
 
