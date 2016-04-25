@@ -535,7 +535,6 @@ nil
         content_by_lua '
             local jwt = require "resty.jwt"
             local validators = require "resty.jwt-validators"
-            local cjson = require "cjson.safe"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
@@ -571,7 +570,6 @@ everything is awesome~ :p
         content_by_lua '
             local jwt = require "resty.jwt"
             local validators = require "resty.jwt-validators"
-            local cjson = require "cjson.safe"
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
                 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
@@ -608,6 +606,52 @@ true
 everything is awesome~ :p
 nil
 nil
+--- no_error_log
+[error]
+
+
+=== TEST 20: Multiple claim specs
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local validators = require "resty.jwt-validators"
+            local cjson = require "cjson.safe"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                ".eyJmb28iOiJiYXIiLCJzdWIiOiJUZXN0IFN1YmplY3QifQ" ..
+                ".UDSQ6edgmmSR9Us53p7Mg2MvcsbVNLCQISJj-rE7zPI",
+                {
+                  __jwt = function(val, claim, jwt_json)
+                    ngx.say("BEFORE")
+                  end
+                },
+                {
+                  __jwt = function(val, claim, jwt_json)
+                    ngx.say("DURING")
+                  end,
+                  sub = validators.equals("Test Subject")
+                },
+                {
+                  __jwt = function(val, claim, jwt_json)
+                    ngx.say("AFTER")
+                  end
+                }
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+BEFORE
+DURING
+AFTER
+true
+everything is awesome~ :p
 --- no_error_log
 [error]
 
