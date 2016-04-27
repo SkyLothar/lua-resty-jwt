@@ -23,6 +23,7 @@ build = {
   modules = {
     ['resty.jwt'] = 'lib/resty/jwt.lua',
     ['resty.evp'] = 'lib/resty/evp.lua',
+    ['resty.jwt-validators'] = 'lib/resty/jwt-validators.lua',
     ['resty.hmac'] = 'vendor/resty/hmac.lua'
   }
 }
