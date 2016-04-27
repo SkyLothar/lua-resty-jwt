@@ -4,7 +4,7 @@ local evp = require "resty.evp"
 local hmac = require "resty.hmac"
 local resty_random = require "resty.random"
 
-local _M = {_VERSION="0.1.3"}
+local _M = {_VERSION="0.1.4"}
 local mt = {__index=_M}
 
 local string_match= string.match

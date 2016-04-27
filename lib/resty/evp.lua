@@ -3,7 +3,7 @@
 
 local ffi = require "ffi"
 local _C = ffi.C
-local _M = { _VERSION = '0.01' }
+local _M = { _VERSION = "0.01" }
 
 
 local CONST = {
@@ -33,7 +33,7 @@ int RSA_size(const RSA *rsa);
 void RSA_free(RSA *rsa);
 typedef int pem_password_cb(char *buf, int size, int rwflag, void *userdata);
 RSA * PEM_read_bio_RSAPrivateKey(BIO *bp, RSA **rsa, pem_password_cb *cb,
-								void *u);
+                                 void *u);
 RSA * PEM_read_bio_RSAPublicKey(BIO *bp, RSA **rsa, pem_password_cb *cb,
                                 void *u);
 
