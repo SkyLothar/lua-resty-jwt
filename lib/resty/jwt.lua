@@ -736,9 +736,13 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
       end
     elseif secret ~= nil then
       local err
-      cert, err = evp.Cert:new(secret)
+      if secret:find("CERTIFICATE") then
+        cert, err = evp.Cert:new(secret)
+      elseif secret:find("PUBLIC KEY") then
+        cert, err = evp.PublicKey:new(secret)
+      end
       if not cert then
-        jwt_obj[str_const.reason] = "Decode secret is not a valid cert: " .. err
+        jwt_obj[str_const.reason] = "Decode secret is not a valid cert/public key: " .. err
         return jwt_obj
       end
     else

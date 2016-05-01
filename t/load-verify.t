@@ -344,7 +344,7 @@ everything is awesome~ :p
 [error]
 
 
-=== TEST 15: Verify valid RS256 signed jwt
+=== TEST 15: Verify valid RS256 signed jwt using a certificate
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -383,7 +383,7 @@ bar
 [error]
 
 
-=== TEST 16: Verify RS256 signed jwt with bogus signature
+=== TEST 16: Verify RS256 signed jwt with bogus signature using a certificate
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -410,6 +410,99 @@ bar
             jwt_token = jwt_token .. "123"
 
             local jwt_obj = jwt:verify(nil, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+Wrongly encoded signature
+--- no_error_log
+[error]
+
+=== TEST 17: Verify valid RS256 signed jwt using a rsa public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            -- pubkey.pem
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtM/RXjMp7AvPrnb1/i3I
+mcZ4ebkY+AvUurTXngJSBgn0GJNM1HDRQqApE5JzUHf2BImsAyzW8QarrWzA2dWm
+q8rNWtJWJlHlSwiKr8wZDyU0kLAqKUEPVfFrk9uds8zc7OvHVRjXQiXeSTUUMpKc
+HsZp4zz79Jr4+4vF4Bt+/U8luj/llleaJHlJFyfXiUtqLg2HUdkjPQaFVvhYMQ7u
+gZl4aM1uRH7J2oxaexy/JEApSNEDnO/cripd+Pdqx+m8xbBZ9pX8FsvYnO3D/BKQ
+k3hadbRWg/r8QYT2ZHk0NRyseoUOc3hyAeckiSWe2n9lvK+HkxmM23UVtuAwxwj4
+WQIDAQAB
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ RS256 = 1 })
+            local jwt_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
+                .. "eyJpc3MiOiJ0ZXN0IiwibmJmIjoxNDYxOTE0MDE3LCJleHAiOj"
+                .. "E0NjE5MTc2MTcsImlhdCI6MTQ2MTkxNDAxN30.LCd6AunnelBJ"
+                .. "Q1Y8-_nx2chncOd8XidNzmbFk5O_ohlOqjeGConlVpfJZyPYCe"
+                .. "bLvfgWQUT9VSM9cqXK7ZtUBTN8iI9VIYpjakzB3GfF6AiPK-bS"
+                .. "6tDfoXoupJD448rD0hB5Q6H-FhE6EmWzlAhoE38qQvnr3Va17h"
+                .. "LO5PLhDjmDtI2BeB0GaTM4SwkD1rHaS0KmWoW30hpNWJGoQu-J"
+                .. "fERR5000dhqa08N0mJeKx1fwFZ4D8hW8zj7zaL9LpF-ogdQEF-"
+                .. "fb1_6ntMMh0fOdvkE9QOsNLUo_VWzdsIvnCCDn8oCrwgssm9BbxQWphRS33DMCVbALwD6HCOa836rX6Q"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+test
+--- no_error_log
+[error]
+
+=== TEST 18: Verify RS256 signed jwt with bogus signature using a rsa public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            -- pubkey.pem
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtM/RXjMp7AvPrnb1/i3I
+mcZ4ebkY+AvUurTXngJSBgn0GJNM1HDRQqApE5JzUHf2BImsAyzW8QarrWzA2dWm
+q8rNWtJWJlHlSwiKr8wZDyU0kLAqKUEPVfFrk9uds8zc7OvHVRjXQiXeSTUUMpKc
+HsZp4zz79Jr4+4vF4Bt+/U8luj/llleaJHlJFyfXiUtqLg2HUdkjPQaFVvhYMQ7u
+gZl4aM1uRH7J2oxaexy/JEApSNEDnO/cripd+Pdqx+m8xbBZ9pX8FsvYnO3D/BKQ
+k3hadbRWg/r8QYT2ZHk0NRyseoUOc3hyAeckiSWe2n9lvK+HkxmM23UVtuAwxwj4
+WQIDAQAB
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ RS256 = 1 })
+            local jwt_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
+                .. "eyJpc3MiOiJ0ZXN0IiwibmJmIjoxNDYxOTE0MDE3LCJleHAiOj"
+                .. "E0NjE5MTc2MTcsImlhdCI6MTQ2MTkxNDAxN30.LCd6AunnelBJ"
+                .. "Q1Y8-_nx2chncOd8XidNzmbFk5O_ohlOqjeGConlVpfJZyPYCe"
+                .. "bLvfgWQUT9VSM9cqXK7ZtUBTN8iI9VIYpjakzB3GfF6AiPK-bS"
+                .. "6tDfoXoupJD448rD0hB5Q6H-FhE6EmWzlAhoE38qQvnr3Va17h"
+                .. "LO5PLhDjmDtI2BeB0GaTM4SwkD1rHaS0KmWoW30hpNWJGoQu-J"
+                .. "fERR5000dhqa08N0mJeKx1fwFZ4D8hW8zj7zaL9LpF-ogdQEF-"
+                .. "fb1_6ntMMh0fOdvkE9QOsNLUo_VWzdsIvnCCDn8oCrwgssm9BbxQWphRS33DMCVbALwD6HCOa836rX6Q"
+
+            -- Alter the jwt
+            jwt_token = jwt_token .. "123"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
         ';
