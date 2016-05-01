@@ -357,7 +357,7 @@ end
 --                             matching certificate.
 function _M.set_x5u_content_retriever(self, retriever_function)
   if type(retriever_function) ~= str_const.funct then
-    error("'retriever_function' is expected to be a function")
+    error("'retriever_function' is expected to be a function", 0)
   end
   self.x5u_content_retriever = retriever_function
 end
@@ -589,11 +589,11 @@ local function get_claim_spec_from_legacy_options(self, options)
   end
 
   if not is_nil_or_boolean(options[str_const.require_nbf_claim]) then
-    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_nbf_claim))
+    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_nbf_claim), 0)
   end
 
   if not is_nil_or_boolean(options[str_const.require_exp_claim]) then
-    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_exp_claim))
+    error(string.format("'%s' validation option is expected to be a boolean.", str_const.require_exp_claim), 0)
   end
 
   if options[str_const.lifetime_grace_period] ~= nil or options[str_const.require_nbf_claim] ~= nil or options[str_const.require_exp_claim] ~= nil then
@@ -656,13 +656,13 @@ local function validate_claims(self, jwt_obj, ...)
     end
     for claim, fx in pairs(claim_spec) do
       if type(fx) ~= str_const.funct then
-        error("Claim spec value must be a function - see jwt-validators.lua for helper functions")
+        error("Claim spec value must be a function - see jwt-validators.lua for helper functions", 0)
       end
       
       local val = claim == str_const.full_obj and cjson_decode(jwt_json) or jwt_obj.payload[claim]
       local success, ret = pcall(fx, val, claim, jwt_json)
       if not success then
-        jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.*: ", "")
+        jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.-:%d-: ", "")
         return false
       elseif ret == false then
         jwt_obj[str_const.reason] = string.format("Claim '%s' ('%s') returned failure", claim, val)

@@ -46,12 +46,12 @@ local messages = {
 
 -- Local function to make sure that a value is non-nil or raises an error
 local function ensure_not_nil(v, e, ...)
-  return v ~= nil and v or error(string.format(e, ...))
+  return v ~= nil and v or error(string.format(e, ...), 0)
 end
 
 -- Local function to make sure that a value is the given type
 local function ensure_is_type(v, t, e, ...)
-  return type(v) == t and v or error(string.format(e, ...))
+  return type(v) == t and v or error(string.format(e, ...), 0)
 end
 
 -- Local function to make sure that a value is a (non-empty) table
@@ -78,7 +78,7 @@ local function ensure_is_non_negative(v, e, ...)
     if v >= 0 then
       return v
     else
-      error(string.format(e, ...))
+      error(string.format(e, ...), 0)
     end
   end
 end
@@ -173,7 +173,7 @@ function _M.require_one_of(claim_keys)
       if val.payload[v] ~= nil then return true end
     end
     
-    error(string.format(messages.missing_claim, table.concat(claim_keys, ", ")))
+    error(string.format(messages.missing_claim, table.concat(claim_keys, ", ")), 0)
   end
 end
 
@@ -333,7 +333,7 @@ local function format_date_on_error(date_check_function, error_msg)
   return function(val, claim, jwt_json)
     local ret = date_check_function(val, claim, jwt_json)
     if ret == false then
-      error(string.format("'%s' claim %s %s", claim, error_msg, ngx.http_time(val)))
+      error(string.format("'%s' claim %s %s", claim, error_msg, ngx.http_time(val)), 0)
     end
     return true
   end
