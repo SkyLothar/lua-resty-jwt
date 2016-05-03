@@ -319,7 +319,15 @@ whitelist unsupported alg: HS256
         content_by_lua '
             local jwt = require "resty.jwt"
 
-            local function get_public_key(url)
+            local function get_public_key(url, iss, kid)
+                if iss ~= "Authz" then
+                    error("No issuer. Duh :(")
+                end
+
+                if kid ~= "IamAPubl1cKeV" then
+                    error("No key identifier. Duh :(")
+                end
+
                 return ngx.var.cert
             end
 
@@ -334,8 +342,9 @@ whitelist unsupported alg: HS256
                         typ="JWT",
                         alg="RS256",
                         x5u="https://dummy.com/certs",
+                        kid="IamAPubl1cKeV",
                     },
-                    payload={foo="bar", exp=9999999999}
+                    payload={foo="bar", iss="Authz", exp=9999999999}
                 }
             )
 

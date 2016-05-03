@@ -352,9 +352,12 @@ end
 --- Set a function used to retrieve the content of x5u urls
 --
 -- @param retriever_function - A pointer to a function. This function should be
---                             defined to accept one string parameter, the value
---                             of the 'x5u' attribute in a jwt and return the
---                             matching certificate.
+--                             defined to accept three string parameters. First one
+--                             will be the value of the 'x5u' attribute. Second
+--                             one will be the value of the 'iss' attribute, would
+--                             it be defined in the jwt. Third one will be the value
+--                             of the 'iss' attribute, would it be defined in the jwt.
+--                             This function should return the matching certificate.
 function _M.set_x5u_content_retriever(self, retriever_function)
   if type(retriever_function) ~= str_const.funct then
     error("'retriever_function' is expected to be a function", 0)
@@ -552,7 +555,9 @@ local function extract_certificate(jwt_obj, x5u_content_retriever)
     -- TODO Maybe validate the url against an optional list whitelisted url prefixes?
     -- cf. https://news.ycombinator.com/item?id=9302394
 
-    local success, ret = pcall(x5u_content_retriever, x5u)
+    local iss = jwt_obj[str_const.payload][str_const.iss]
+    local kid = jwt_obj[str_const.header][str_const.kid]
+    local success, ret = pcall(x5u_content_retriever, x5u, iss, kid)
 
     if not success then
       jwt_obj[str_const.reason] = "An error occured while invoking the x5u_content_retriever function."
