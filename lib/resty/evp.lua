@@ -3,7 +3,7 @@
 
 local ffi = require "ffi"
 local _C = ffi.C
-local _M = { _VERSION = "0.01" }
+local _M = { _VERSION = "0.0.2" }
 
 
 local CONST = {

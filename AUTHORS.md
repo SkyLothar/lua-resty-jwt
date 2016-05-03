@@ -11,6 +11,7 @@ Thank you guys for making this project better!
 ## Resty.EVP
  - Daniel Hiltgen [@dhiltgen](https://github.com/dhiltgen)
  - ravenscar [@ravenscar](https://github.com/ravenscar)
+ - William [@Deadleg](https://github.com/Deadleg)
 
 ## Patches and Suggestions
  - Daniel Hiltgen [@dhiltgen](https://github.com/dhiltgen)
