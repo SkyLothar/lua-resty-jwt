@@ -5,7 +5,7 @@ Thank you guys for making this project better!
  - [@SkyLothar](https://github.com/skylothar) <allothar@gmail.com>
 
 ## Tons of Features
- - Em. [@fearman](https://github.com/fermaem)
+ - Em. [@fermaem](https://github.com/fermaem)
  - Nathan Toone [@toonetown](https://github.com/toonetown)
 
 ## Resty.EVP
