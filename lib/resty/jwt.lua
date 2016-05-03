@@ -415,13 +415,13 @@ local function get_secret_str(secret_or_function, jwt_obj)
     if alg ~= str_const.HS256 and alg ~= str_const.HS512 then
       error({reason="secret function can only be used with hmac alg: " .. alg})
     end
-    
+
     -- Pull out the kid value from the header
     local kid_val = jwt_obj[str_const.header][str_const.kid]
     if kid_val == nil then
       error({reason="secret function specified without kid in header"})
     end
-    
+
     -- Call the function
     return secret_or_function(kid_val) or error({reason="function returned nil for kid: " .. kid_val})
   elseif type(secret_or_function) == str_const.string then
@@ -580,7 +580,7 @@ local function get_claim_spec_from_legacy_options(self, options)
   end
 
   if options[str_const.lifetime_grace_period] ~= nil then
-    jwt_validators.set_system_leeway(options[str_const.lifetime_grace_period] or 0)    
+    jwt_validators.set_system_leeway(options[str_const.lifetime_grace_period] or 0)
 
     -- If we have a leeway set, then either an NBF or an EXP should also exist requireds are added below
     if options[str_const.require_nbf_claim] ~= true and options[str_const.require_exp_claim] ~= true then
@@ -616,7 +616,7 @@ end
 local function is_legacy_validation_options(options)
 
   -- Validation options MUST be a table
-  if type(options) ~= str_const.table then 
+  if type(options) ~= str_const.table then
     return false
   end
 
@@ -648,7 +648,7 @@ local function validate_claims(self, jwt_obj, ...)
 
   -- Encode the current jwt_obj and use it when calling the individual validation functions
   local jwt_json = cjson_encode(jwt_obj)
-  
+
   -- Validate all our specs
   for _, claim_spec in ipairs(claim_specs) do
     if is_legacy_validation_options(claim_spec) then
@@ -658,7 +658,7 @@ local function validate_claims(self, jwt_obj, ...)
       if type(fx) ~= str_const.funct then
         error("Claim spec value must be a function - see jwt-validators.lua for helper functions", 0)
       end
-      
+
       local val = claim == str_const.full_obj and cjson_decode(jwt_json) or jwt_obj.payload[claim]
       local success, ret = pcall(fx, val, claim, jwt_json)
       if not success then
@@ -670,7 +670,7 @@ local function validate_claims(self, jwt_obj, ...)
       end
     end
   end
-  
+
   -- Everything was good
   return true
 end
