@@ -352,7 +352,15 @@ everything is awesome~ :p
         content_by_lua '
             local jwt = require "resty.jwt"
 
-            local function get_public_key(url)
+            local function get_public_key(url, iss, kid)
+                if iss ~= nil then
+                    error("Unexpected iss has been passed. Duh :(")
+                end
+
+                if kid ~= nil then
+                    error("Unexpected kid has been passed. Duh :(")
+                end
+
                 return ngx.var.cert
             end
 
