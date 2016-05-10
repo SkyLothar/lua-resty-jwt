@@ -747,7 +747,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
         cert, err = evp.PublicKey:new(secret)
       end
       if not cert then
-        jwt_obj[str_const.reason] = "Decode secret is not a valid cert/public key: " .. err
+        jwt_obj[str_const.reason] = "Decode secret is not a valid cert/public key: " .. (err and err or secret)
         return jwt_obj
       end
     else
