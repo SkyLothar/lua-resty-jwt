@@ -5,6 +5,11 @@ lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01
 
 [![Build Status](https://img.shields.io/travis/SkyLothar/lua-resty-jwt.svg?style=flat-square)](https://travis-ci.org/SkyLothar/lua-resty-jwt)
 
+
+**Attention :exclamation: the hmac lib used here is [lua-resty-hmac](https://github.com/jkeys089/lua-resty-hmac), not the one in luarocks.**
+
+You can use luarocks to install this lib, everything will be there when the installation is done.
+
 version
 =======
 
@@ -393,6 +398,11 @@ Examples
 
 Installation
 ============
+
+Using Luarocks
+```bash
+luarocks install lua-resty-jwt
+```
 
 It is recommended to use the latest [ngx_openresty bundle](http://openresty.org) directly.
 
