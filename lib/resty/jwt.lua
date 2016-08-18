@@ -748,7 +748,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
       jwt_obj[str_const.reason] = "signature mismatch: " .. jwt_obj[str_const.signature]
     end
   elseif alg == str_const.RS256 then
-    local cert
+    local cert, err
     if self.trusted_certs_file ~= nil then
       local cert_str = extract_certificate(jwt_obj, self.x5u_content_retriever)
       if not cert_str then
@@ -817,7 +817,7 @@ end
 
 
 function _M.verify(self, secret, jwt_str, ...)
-  jwt_obj = _M.load_jwt(self, jwt_str, secret)
+  local jwt_obj = _M.load_jwt(self, jwt_str, secret)
   if not jwt_obj.valid then
     return {verified=false, reason=jwt_obj[str_const.reason]}
   end
