@@ -180,11 +180,11 @@ end
 --@param secret key
 --@return secret key, mac key and encryption key
 local function derive_keys(enc, secret_key)
-  local key_size_bytes = 16
+  local key_size_bytes = 32
   if enc == str_const.A128CBC_HS256 then
-    key_size_bytes = 16
-  elseif enc == str_const.A256CBC_HS512 then
     key_size_bytes = 32
+  elseif enc == str_const.A256CBC_HS512 then
+    key_size_bytes = 64
   end
   if not secret_key then
     secret_key =  resty_random.bytes(key_size_bytes,true)
