@@ -169,13 +169,13 @@ sign-jwe
 
 sign a table_of_jwt to a jwt_token.
 
-The `alg` argument specifies which hashing algorithm to use for encrypting key (`DIR`).
-The `enc` argument specifies which hashing algorithm to use for encrypting payload (`A128CBC_HS256`, `A256CBC_HS512`)
+The `alg` argument specifies which hashing algorithm to use for encrypting key (`dir`).
+The `enc` argument specifies which hashing algorithm to use for encrypting payload (`A128CBC-HS256`, `A256CBC-HS512`)
 
 ### sample of table_of_jwt ###
 ```
 {
-    "header": {"typ": "JWE", "alg": "DIR", "enc":"A128CBC_HS256"},
+    "header": {"typ": "JWE", "alg": "dir", "enc":"A128CBC-HS256"},
     "payload": {"foo": "bar"}
 }
 ```
@@ -324,7 +324,7 @@ When using legacy `validation_options`, you *MUST ONLY* specify these options.  
     * When none of the `nbf` and `exp` claims can be found, verification will fail.
 
     * `nbf` and `exp` claims are expected to be expressed in the jwt as numerical values. Wouldn't that be the case, verification will fail.
-    
+
     * Specifying this option is equivalent to calling:
       ```
       validators.set_system_leeway(leeway)
@@ -342,7 +342,7 @@ When using legacy `validation_options`, you *MUST ONLY* specify these options.  
 * `require_nbf_claim`: Express if the `nbf` claim is optional or not. Value should be a boolean.
 
     * When this validation option is set to `true` and no `lifetime_grace_period` has been specified, a zero (`0`) leeway is implied.
-    
+
     * Specifying this option is equivalent to specifying as a `claim_spec`:
       ```
       {
