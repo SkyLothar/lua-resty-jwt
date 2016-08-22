@@ -13,7 +13,7 @@ You can use luarocks to install this lib, everything will be there when the inst
 version
 =======
 
-0.1.6
+0.1.7
 
 
 Table of Contents
