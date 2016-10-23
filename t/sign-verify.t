@@ -293,9 +293,9 @@ bar
 
             local jwt_obj = jwt:verify(
                 "lua-resty-jwt",
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
-                ".eyJmb28iOiJiYXIiLCJuYmYiOjk5OTk5OTk5OTl9" ..
-                ".Wfu3owxbzlrb0GXvV0D22Si8WEDP0WeRGwZNPAoYHMI"
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                .. "eyJmb28iOiJiYXIifQ."
+                .. "VxhQcGihWyHuJeHhpUiq2FU7aW2s_3ZJlY6h1kdlmJY"
             )
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])

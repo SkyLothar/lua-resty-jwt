@@ -451,15 +451,15 @@ WQIDAQAB
                 ]]
 
             jwt:set_alg_whitelist({ RS256 = 1 })
-            local jwt_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
-                .. "eyJpc3MiOiJ0ZXN0IiwibmJmIjoxNDYxOTE0MDE3LCJleHAiOj"
-                .. "E0NjE5MTc2MTcsImlhdCI6MTQ2MTkxNDAxN30.LCd6AunnelBJ"
-                .. "Q1Y8-_nx2chncOd8XidNzmbFk5O_ohlOqjeGConlVpfJZyPYCe"
-                .. "bLvfgWQUT9VSM9cqXK7ZtUBTN8iI9VIYpjakzB3GfF6AiPK-bS"
-                .. "6tDfoXoupJD448rD0hB5Q6H-FhE6EmWzlAhoE38qQvnr3Va17h"
-                .. "LO5PLhDjmDtI2BeB0GaTM4SwkD1rHaS0KmWoW30hpNWJGoQu-J"
-                .. "fERR5000dhqa08N0mJeKx1fwFZ4D8hW8zj7zaL9LpF-ogdQEF-"
-                .. "fb1_6ntMMh0fOdvkE9QOsNLUo_VWzdsIvnCCDn8oCrwgssm9BbxQWphRS33DMCVbALwD6HCOa836rX6Q"
+            local jwt_token = "eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJSUzI1NiJ9."
+              .. "eyJpc3MiOiAidGVzdCIsICJpYXQiOiAxNDYxOTE0MDE3fQ."
+              .. "dng6Vc-p_ISwiWc61ifWahbFYKBNWfaIr-W3bTPpgL-awG8"
+              .. "UlaCONkQk2PHJw_xndbpenQYl_-hipCKynokeFBTXVcSL6H"
+              .. "7XL4D9laQVDVFnI63hcXOMQxgICsQPVdcfVSBl2jHyV8kuw"
+              .. "XpUHbXQTxMawlE9SkI1-7UukxL9OyFIkT1D1uW7P96irVDs"
+              .. "GkEdTLVUPJerH-jlW4rRbW9twSHsgzHgkaqnQ41giW_e2Zz"
+              .. "r0U2euFH-AxlyvWBJd8Y7rQ_aD40USKsJilZ5qSykGZ7KHd"
+              .. "PzuwTXioCwB8bGVE2YoL-DKYj7-tOwoNsMK7UJzyjqzHqwuqvZWtbhmeRlww"
 
             local jwt_obj = jwt:verify(public_key, jwt_token)
             ngx.say(jwt_obj["verified"])
@@ -497,15 +497,15 @@ WQIDAQAB
                 ]]
 
             jwt:set_alg_whitelist({ RS256 = 1 })
-            local jwt_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9."
-                .. "eyJpc3MiOiJ0ZXN0IiwibmJmIjoxNDYxOTE0MDE3LCJleHAiOj"
-                .. "E0NjE5MTc2MTcsImlhdCI6MTQ2MTkxNDAxN30.LCd6AunnelBJ"
-                .. "Q1Y8-_nx2chncOd8XidNzmbFk5O_ohlOqjeGConlVpfJZyPYCe"
-                .. "bLvfgWQUT9VSM9cqXK7ZtUBTN8iI9VIYpjakzB3GfF6AiPK-bS"
-                .. "6tDfoXoupJD448rD0hB5Q6H-FhE6EmWzlAhoE38qQvnr3Va17h"
-                .. "LO5PLhDjmDtI2BeB0GaTM4SwkD1rHaS0KmWoW30hpNWJGoQu-J"
-                .. "fERR5000dhqa08N0mJeKx1fwFZ4D8hW8zj7zaL9LpF-ogdQEF-"
-                .. "fb1_6ntMMh0fOdvkE9QOsNLUo_VWzdsIvnCCDn8oCrwgssm9BbxQWphRS33DMCVbALwD6HCOa836rX6Q"
+            local jwt_token = "eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJSUzI1NiJ9."
+              .. "eyJpc3MiOiAidGVzdCIsICJpYXQiOiAxNDYxOTE0MDE3fQ."
+              .. "dng6Vc-p_ISwiWc61ifWahbFYKBNWfaIr-W3bTPpgL-awG8"
+              .. "UlaCONkQk2PHJw_xndbpenQYl_-hipCKynokeFBTXVcSL6H"
+              .. "7XL4D9laQVDVFnI63hcXOMQxgICsQPVdcfVSBl2jHyV8kuw"
+              .. "XpUHbXQTxMawlE9SkI1-7UukxL9OyFIkT1D1uW7P96irVDs"
+              .. "GkEdTLVUPJerH-jlW4rRbW9twSHsgzHgkaqnQ41giW_e2Zz"
+              .. "r0U2euFH-AxlyvWBJd8Y7rQ_aD40USKsJilZ5qSykGZ7KHd"
+              .. "PzuwTXioCwB8bGVE2YoL-DKYj7-tOwoNsMK7UJzyjqzHqwuqvZWtbhmeRlww"
 
             -- Alter the jwt
             jwt_token = jwt_token .. "123"

@@ -656,3 +656,28 @@ everything is awesome~ :p
 [error]
 
 
+=== TEST 21: JWT validate exp by default
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local jwt_obj = jwt:verify(
+                "lua-resty-jwt",
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" ..
+                ".eyJmb28iOiJiYXIiLCJleHAiOjB9" ..
+                ".btivkb1guN1sQBYYVcrigEuNVvDOp1PDrbgaNSD3Whg"
+            )
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+'exp' claim expired at Thu, 01 Jan 1970 00:00:00 GMT
+--- no_error_log
+[error]
+
+

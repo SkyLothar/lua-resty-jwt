@@ -4,7 +4,7 @@ local evp = require "resty.evp"
 local hmac = require "resty.hmac"
 local resty_random = require "resty.random"
 
-local _M = {_VERSION="0.1.5"}
+local _M = {_VERSION="0.1.8"}
 local mt = {__index=_M}
 
 local string_match= string.match
@@ -353,8 +353,11 @@ _M.alg_whitelist = nil
 
 --- Returns the list of default validations that will be
 --- applied upon the verification of a jwt.
-function _M.get_default_validation_options(self)
-  return { }
+function _M.get_default_validation_options(self, jwt_obj)
+  return {
+    [str_const.require_exp_claim]=jwt_obj[exp] ~= nil,
+    [str_const.require_nbf_claim]=jwt_obj[nbf] ~= nil
+  }
 end
 
 --- Set a function used to retrieve the content of x5u urls
@@ -673,6 +676,9 @@ end
 -- Validates the claims for the given (parsed) object
 local function validate_claims(self, jwt_obj, ...)
   local claim_specs = {...}
+  if #claim_specs == 0 then
+    table.insert(claim_specs, _M:get_default_validation_options(jwt_obj))
+  end
 
   if jwt_obj[str_const.reason] ~= nil then
     return false
@@ -730,8 +736,6 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
   local alg = jwt_obj[str_const.header][str_const.alg]
 
   local jwt_str = string_format(str_const.regex_jwt_join_str, jwt_obj.raw_header , jwt_obj.raw_payload , jwt_obj.signature)
-
-
 
   if self.alg_whitelist ~= nil then
     if self.alg_whitelist[alg] == nil then
