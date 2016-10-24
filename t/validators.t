@@ -1946,3 +1946,171 @@ GET /t
 [error]
 
 
+=== TEST 77: Validator.opt_contains_any_of
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            local tval = validators.opt_contains_any_of({ "roleFoo", "roleBar" }, "roles")
+            local obj1 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles=[ "roleFoo", "roleBaz" ] }
+            }
+            local obj2 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBar", "roleBaz" ] }
+            }
+            local obj3 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles="roleFoo" }
+            }
+            local obj4 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBoo", "roleBaz" ] }
+            }
+            __testValidator(tval, "roles", obj1)
+            __testValidator(tval, "roles", obj2)
+            __testValidator(tval, "roles", obj3)
+            __testValidator(tval, "roles", obj4)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+true
+Cannot create validator for non-table roles.
+false
+--- no_error_log
+[error]
+
+
+=== TEST 78: Validator.opt_contains_any_of number
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_contains_any_of, { 41, 42 }, "table-claim")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-string table table-claim.
+--- no_error_log
+[error]
+
+
+=== TEST 79: Validator.opt_contains_any_of empty table
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local cjson = require "cjson.safe"
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_contains_any_of, {}, "table-claim")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for empty table table-claim.
+--- no_error_log
+[error]
+
+
+=== TEST 80: Validator.opt_contains_any_of invalid table
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local cjson = require "cjson.safe"
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_contains_any_of, "abc", "table-claim")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-table table-claim.
+--- no_error_log
+[error]
+
+
+=== TEST 81: Validator.opt_contains_any_of mixed type table
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local cjson = require "cjson.safe"
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_contains_any_of, { "abc", 123 }, "table-claim")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-string table table-claim.
+--- no_error_log
+[error]
+
+
+=== TEST 82: Validator.opt_contains_any_of non-string
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local cjson = require "cjson.safe"
+            local validators = require "resty.jwt-validators"
+            __runSay(validators.opt_contains_any_of, { 41, 42 }, "table-claim")
+        ';
+    }
+--- request
+GET /t
+--- response_body
+Cannot create validator for non-string table table-claim.
+--- no_error_log
+[error]
+
+
+=== TEST 83: Validator.contains_any_of
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local validators = require "resty.jwt-validators"
+            
+            local tval = validators.contains_any_of({ "roleFoo", "roleBar" }, "roles")
+            local obj1 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles=[ "roleFoo", "roleBaz" ] }
+            }
+            local obj2 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBar", "roleBaz" ] }
+            }
+            local obj3 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles="roleFoo" }
+            }
+            local obj4 = {
+              header = { type="JWT", alg="HS256" },
+              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBaz", "roleBoo" ] }
+            }
+            __testValidator(tval, "roles", obj1)
+            __testValidator(tval, "roles", obj2)
+            __testValidator(tval, "roles", obj3)
+            __testValidator(tval, "roles", obj4)
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+true
+Cannot create validator for non-table roles.
+false
+--- no_error_log
+[error]

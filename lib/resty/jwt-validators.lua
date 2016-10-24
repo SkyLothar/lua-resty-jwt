@@ -287,7 +287,7 @@ end)
     The value of check_values must be a non-empty table with all the same types.  
     The optional name is used for error messages and defaults to "check_values".
 ]]--
-define_validator("contains_any_of", function(check_values,name)
+define_validator("contains_any_of", function(check_values, name)
   return _M.opt_any_of(check_values, table_contains_function, name, "table", "string")
 end)
 
