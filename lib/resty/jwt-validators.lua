@@ -93,6 +93,18 @@ local function string_match_function(val, pattern)
   return string.match(val, pattern) ~= nil
 end
 
+--[[ 
+    A local function which returns truth on existence of check in vals.
+    Adopted from auth0/nginx-jwt table_contains by @twistedstream
+]]--
+local function table_contains_function(vals, check)
+    for _, val in pairs(vals) do
+        if val == check then return true end
+    end
+    return false
+end
+
+
 -- A local function which returns numeric greater than comparison
 local function greater_than_function(val, check)
   return val > check
@@ -270,6 +282,14 @@ define_validator("matches_any_of", function(patterns)
   return _M.opt_any_of(patterns, string_match_function, "patterns", "string", "string")
 end)
 
+--[[
+    Returns a validator that checks if a value of expected type string exists in any of the given values.
+    The value of check_values must be a non-empty table with all the same types.  
+    The optional name is used for error messages and defaults to "check_values".
+]]--
+define_validator("contains_any_of", function(check_values,name)
+  return _M.opt_any_of(check_values, table_contains_function, name, "table", "string")
+end)
 
 --[[
     Returns a validator that checks how a value compares (numerically) to a given 

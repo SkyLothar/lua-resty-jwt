@@ -263,6 +263,9 @@ Returns a validator that checks if a value exactly equals any of the given `chec
 #### `validators.matches_any_of(patterns)` (opt) ####
 Returns a validator that checks if a value matches any of the given `patterns`.
 
+#### `validators.contains_any_of(check_values,name)` (opt) ####
+Returns a validator that checks if a value of expected type `string` exists in any of the given `check_values`.  The value of `check_values`must be a non-empty table with all the same types.  The optional name is used for error messages and defaults to `check_values`.
+
 #### `validators.greater_than(check_val)` (opt) ####
 Returns a validator that checks how a value compares (numerically, using `>`) to a given `check_value`.  The value of `check_val` cannot be `nil` and must be a number.
 
