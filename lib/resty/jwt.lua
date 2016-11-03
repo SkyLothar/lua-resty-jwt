@@ -1,4 +1,5 @@
 local cjson = require "cjson.safe"
+
 local aes = require "resty.aes"
 local evp = require "resty.evp"
 local hmac = require "resty.hmac"
@@ -804,10 +805,13 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
       return jwt_obj
     end
 
+    local verified = false
+    local err = "verify error: reason unknown"
+
     if alg == str_const.RS256 then
-      local verified, err = verifier:verify(message, sig, evp.CONST.SHA256_DIGEST)
+      verified, err = verifier:verify(message, sig, evp.CONST.SHA256_DIGEST)
     elseif alg == str_const.RS512 then
-      local verified, err = verifier:verify(message, sig, evp.CONST.SHA512_DIGEST)
+      verified, err = verifier:verify(message, sig, evp.CONST.SHA512_DIGEST)
     end
     if not verified then
       jwt_obj[str_const.reason] = err
