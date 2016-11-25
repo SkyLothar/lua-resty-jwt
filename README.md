@@ -8,12 +8,16 @@ lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01
 
 **Attention :exclamation: the hmac lib used here is [lua-resty-hmac](https://github.com/jkeys089/lua-resty-hmac), not the one in luarocks.**
 
-You can use luarocks to install this lib, everything will be there when the installation is done.
+Installation
+============
+- opm: `opm get SkyLothar/lua-resty-jwt`
+- luarocks: `luarocks install lua-resty-jwt`
+- Head to [release page](https://github.com/SkyLothar/lua-resty-jwt/releases) and download `tar.gz`
 
 version
 =======
 
-0.1.8
+0.1.9
 
 
 Table of Contents
