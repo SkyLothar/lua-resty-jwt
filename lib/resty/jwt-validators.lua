@@ -365,8 +365,11 @@ end
 ]]--
 define_validator("is_not_before", function()
   return format_date_on_error(
-    _M.chain(validate_is_date, _M.opt_less_than_or_equal(system_clock() + system_leeway)),
-    "not valid until"
+     _M.chain(validate_is_date,
+        function(val)
+           return val and less_than_or_equal_function(val, (system_clock() + system_leeway))
+        end),
+     "not valid until"
   )
 end)
 
@@ -380,7 +383,7 @@ define_validator("is_not_expired", function()
   return format_date_on_error(
      _M.chain(validate_is_date,
        function(val)
-         return val and val > (system_clock() - system_leeway)
+          return val and greater_than_function(val, (system_clock() - system_leeway))
        end),
      "expired at"
   )
@@ -395,7 +398,7 @@ define_validator("is_at", function()
   local now = system_clock()
   return format_date_on_error(
     _M.chain(validate_is_date,
-             function (val)
+             function(val)
                 local now = system_clock()
                 return val and
                    greater_than_or_equal_function(val, now - system_leeway) and
