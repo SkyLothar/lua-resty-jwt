@@ -395,8 +395,12 @@ define_validator("is_at", function()
   local now = system_clock()
   return format_date_on_error(
     _M.chain(validate_is_date,
-             _M.opt_greater_than_or_equal(now - system_leeway),
-             _M.opt_less_than_or_equal(now + system_leeway)),
+             function (val)
+                local now = system_clock()
+                return val and
+                   greater_than_or_equal_function(val, now - system_leeway) and
+                   less_than_or_equal_function(val, now + system_leeway)
+             end),
     "is only valid at"
   )
 end)
