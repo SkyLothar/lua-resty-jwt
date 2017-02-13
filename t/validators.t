@@ -1456,7 +1456,6 @@ true
 --- no_error_log
 [error]
 
-
 === TEST 58: Validator.opt_is_not_expired
 --- http_config eval: $::HttpConfig
 --- config
@@ -1466,12 +1465,22 @@ true
             local tval = validators.opt_is_not_expired()
             local obj = {
               header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", past=956354998, future=4112028598 }
+              payload = { foo="bar", past=956354998, future=4112028598, near_future=(ngx.time()+1) }
             }
             __testValidator(tval, "foo", obj)
             __testValidator(tval, "blah", obj)
             __testValidator(tval, "past", obj)
             __testValidator(tval, "future", obj)
+
+            __testValidator(tval, "near_future", obj)
+           ngx.sleep(2)
+           local cjson = require "cjson.safe"
+           local status, rslt = pcall(tval, obj.payload["near_future"], "near_future", cjson.encode(obj))
+           if rslt == true then
+              ngx.say("near_future claim is still valid")
+           else
+              ngx.say("near_future claim expired")
+           end
         ';
     }
 --- request
@@ -1481,6 +1490,8 @@ GET /t
 true
 'past' claim expired at Fri, 21 Apr 2000 22:09:58 GMT
 true
+true
+near_future claim expired
 --- no_error_log
 [error]
 
@@ -2081,7 +2092,7 @@ Cannot create validator for non-string table table-claim.
     location /t {
         content_by_lua '
             local validators = require "resty.jwt-validators"
-            
+
             local tval = validators.contains_any_of({ "roleFoo", "roleBar" }, "roles")
             local obj1 = {
               header = { type="JWT", alg="HS256" },
