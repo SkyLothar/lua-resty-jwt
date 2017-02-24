@@ -25,7 +25,7 @@ local _M = {_VERSION="0.1.5"}
 
 
 --[[
-    A function which will define a validator.  It creates both "opt_" and required (non-"opt_") 
+    A function which will define a validator.  It creates both "opt_" and required (non-"opt_")
     versions.  The function that is passed in is the *optional* version.
 ]]--
 local function define_validator(name, fx)
@@ -93,7 +93,7 @@ local function string_match_function(val, pattern)
   return string.match(val, pattern) ~= nil
 end
 
---[[ 
+--[[
     A local function which returns truth on existence of check in vals.
     Adopted from auth0/nginx-jwt table_contains by @twistedstream
 ]]--
@@ -127,7 +127,7 @@ end
 
 
 --[[
-    Returns a validator that chains the given functions together, one after 
+    Returns a validator that chains the given functions together, one after
     another - as long as they keep passing their checks.
 ]]--
 function _M.chain(...)
@@ -148,10 +148,10 @@ end
 
 --[[
     Returns a validator that returns false if a value doesn't exist.  If
-    the value exists and a chain_function is specified, then the value of 
+    the value exists and a chain_function is specified, then the value of
         chain_function(val, claim, jwt_json)
-    will be returned, otherwise, true will be returned.  This allows for 
-    specifying that a value is both required *and* it must match some 
+    will be returned, otherwise, true will be returned.  This allows for
+    specifying that a value is both required *and* it must match some
     additional check.  This function will be used in the "required_*" shortcut
     functions for simplification.
 ]]--
@@ -159,7 +159,7 @@ function _M.required(chain_function)
   if chain_function ~= nil then
     return _M.chain(_M.required(), chain_function)
   end
-  
+
   return function(val, claim, jwt_json)
     ensure_not_nil(val, messages.required_claim, claim)
     return true
@@ -168,7 +168,7 @@ end
 
 --[[
     Returns a validator which errors with a message if *NONE* of the given claim
-    keys exist.  It is expected that this function is used against a full jwt object.  
+    keys exist.  It is expected that this function is used against a full jwt object.
     The claim_keys must be a non-empty table of strings.
 ]]--
 function _M.require_one_of(claim_keys)
@@ -176,40 +176,40 @@ function _M.require_one_of(claim_keys)
   ensure_is_type(claim_keys, "table", messages.wrong_type_validator, "table", "claim_keys")
   ensure_is_table(claim_keys, messages.empty_table_validator, "claim_keys")
   ensure_is_table_type(claim_keys, "string", messages.wrong_table_type_validator, "string", "claim_keys")
-  
+
   return function(val, claim, jwt_json)
     ensure_is_type(val, "table", messages.wrong_type_claim, claim, "table")
     ensure_is_type(val.payload, "table", messages.wrong_type_claim, claim .. ".payload", "table")
-    
+
     for i, v in ipairs(claim_keys) do
       if val.payload[v] ~= nil then return true end
     end
-    
+
     error(string.format(messages.missing_claim, table.concat(claim_keys, ", ")), 0)
   end
 end
 
 --[[
     Returns a validator that checks if the result of calling the given function for
-    the tested value and the check value returns true.  The value of check_val and 
-    check_function cannot be nil.  The optional name is used for error messages and 
-    defaults to "check_value".  The optional check_type is used to make sure that 
-    the check type matches and defaults to type(check_val).  The first parameter 
-    passed to check_function will *never* be nil (check succeeds if value is nil).  
-    Use the required version to fail on nil.  If the check_function raises an 
+    the tested value and the check value returns true.  The value of check_val and
+    check_function cannot be nil.  The optional name is used for error messages and
+    defaults to "check_value".  The optional check_type is used to make sure that
+    the check type matches and defaults to type(check_val).  The first parameter
+    passed to check_function will *never* be nil (check succeeds if value is nil).
+    Use the required version to fail on nil.  If the check_function raises an
     error, that will be appended to the error message.
 ]]--
 define_validator("check", function(check_val, check_function, name, check_type)
   name = name or "check_val"
   ensure_not_nil(check_val, messages.nil_validator, name)
-  
+
   ensure_not_nil(check_function, messages.nil_validator, "check_function")
   ensure_is_type(check_function, "function", messages.wrong_type_validator, "function", "check_function")
-  
+
   check_type = check_type or type(check_val)
   return function(val, claim, jwt_json)
     if val == nil then return true end
-    
+
     ensure_is_type(val, check_type, messages.wrong_type_claim, claim, check_type)
     return check_function(val, check_val)
   end
@@ -227,7 +227,7 @@ end)
 
 
 --[[
-    Returns a validator that checks if a value matches the given pattern.  The value 
+    Returns a validator that checks if a value matches the given pattern.  The value
     of pattern must be a string.
 ]]--
 define_validator("matches", function (pattern)
@@ -239,10 +239,10 @@ end)
 --[[
     Returns a validator which calls the given function for each of the given values
     and the tested value.  If any of these calls return true, then this function
-    returns true.  The value of check_values must be a non-empty table with all the 
-    same types, and the value of check_function must not be nil.  The optional name 
-    is used for error messages and defaults to "check_values".  The optional 
-    check_type is used to make sure that the check type matches and defaults to 
+    returns true.  The value of check_values must be a non-empty table with all the
+    same types, and the value of check_function must not be nil.  The optional name
+    is used for error messages and defaults to "check_values".  The optional
+    check_type is used to make sure that the check type matches and defaults to
     type(check_values[1]) - the table type.
 ]]--
 define_validator("any_of", function(check_values, check_function, name, check_type, table_type)
@@ -250,13 +250,13 @@ define_validator("any_of", function(check_values, check_function, name, check_ty
   ensure_not_nil(check_values, messages.nil_validator, name)
   ensure_is_type(check_values, "table", messages.wrong_type_validator, "table", name)
   ensure_is_table(check_values, messages.empty_table_validator, name)
-  
+
   table_type = table_type or type(check_values[1])
   ensure_is_table_type(check_values, table_type, messages.wrong_table_type_validator, table_type, name)
-  
+
   ensure_not_nil(check_function, messages.nil_validator, "check_function")
   ensure_is_type(check_function, "function", messages.wrong_type_validator, "function", "check_function")
-  
+
   check_type = check_type or table_type
   return _M.opt_check(check_values, function(v1, v2)
     for i, v in ipairs(v2) do
@@ -284,7 +284,7 @@ end)
 
 --[[
     Returns a validator that checks if a value of expected type string exists in any of the given values.
-    The value of check_values must be a non-empty table with all the same types.  
+    The value of check_values must be a non-empty table with all the same types.
     The optional name is used for error messages and defaults to "check_values".
 ]]--
 define_validator("contains_any_of", function(check_values, name)
@@ -292,7 +292,7 @@ define_validator("contains_any_of", function(check_values, name)
 end)
 
 --[[
-    Returns a validator that checks how a value compares (numerically) to a given 
+    Returns a validator that checks how a value compares (numerically) to a given
     check_value.  The value of check_val cannot be nil and must be a number.
 ]]--
 define_validator("greater_than", function(check_val)
@@ -332,7 +332,6 @@ end
 local system_clock = ngx.now
 function _M.set_system_clock(clock)
   ensure_is_type(clock, "function", "clock must be a function")
-  
   -- Check that clock returns the correct value
   local t = clock()
   ensure_is_type(t, "number", "clock function must return a non-negative number")
@@ -366,36 +365,45 @@ end
 ]]--
 define_validator("is_not_before", function()
   return format_date_on_error(
-    _M.chain(validate_is_date, _M.opt_less_than_or_equal(system_clock() + system_leeway)),
-    "not valid until"
+     _M.chain(validate_is_date,
+        function(val)
+           return val and less_than_or_equal_function(val, (system_clock() + system_leeway))
+        end),
+     "not valid until"
   )
 end)
 
 
 --[[
-    Returns a validator that checks if the current time is not equal to or after the 
+    Returns a validator that checks if the current time is not equal to or after the
     tested value within the system's leeway.  This means that:
       val > (system_clock() - system_leeway).
 ]]--
 define_validator("is_not_expired", function()
   return format_date_on_error(
-    _M.chain(validate_is_date, _M.opt_greater_than(system_clock() - system_leeway)),
-    "expired at"
+     _M.chain(validate_is_date,
+       function(val)
+          return val and greater_than_function(val, (system_clock() - system_leeway))
+       end),
+     "expired at"
   )
 end)
 
-
 --[[
-    Returns a validator that checks if the current time is the same as the tested value 
+    Returns a validator that checks if the current time is the same as the tested value
     within the system's leeway.  This means that:
       val >= (system_clock() - system_leeway) and val <= (system_clock() + system_leeway).
 ]]--
 define_validator("is_at", function()
   local now = system_clock()
   return format_date_on_error(
-    _M.chain(validate_is_date, 
-             _M.opt_greater_than_or_equal(now - system_leeway),
-             _M.opt_less_than_or_equal(now + system_leeway)),
+    _M.chain(validate_is_date,
+             function(val)
+                local now = system_clock()
+                return val and
+                   greater_than_or_equal_function(val, now - system_leeway) and
+                   less_than_or_equal_function(val, now + system_leeway)
+             end),
     "is only valid at"
   )
 end)
