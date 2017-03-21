@@ -4,10 +4,10 @@ services:
   - docker
 
 before_install:
-  - docker pull skylothar/openresty-testsuite:latest
+  - ./ci before_install
 
 script:
-  - docker-compose up
+  - ./ci script
 
 branches:
   only:

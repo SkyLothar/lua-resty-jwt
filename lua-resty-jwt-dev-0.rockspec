@@ -1,8 +1,7 @@
 package = 'lua-resty-jwt'
 version = 'dev-0'
 source = {
-  url = 'git://github.com/SkyLothar/lua-resty-jwt',
-  branch = 'master'
+  url = 'file://.'
 }
 description = {
   summary = 'JWT for ngx_lua and LuaJIT.',
