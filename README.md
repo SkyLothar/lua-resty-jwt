@@ -433,7 +433,7 @@ Testing With Docker
 ===================
 
 ```
-docker-compose up
+./ci script
 ```
 
 [Back to TOC](#table-of-contents)

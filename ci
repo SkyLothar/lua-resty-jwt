@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -ev # Ref https://docs.travis-ci.com/user/customizing-the-build/#Implementing-Complex-Build-Steps
+
+case "${1:?}" in
+    before_install)
+        docker pull skylothar/openresty-testsuite:latest
+        ;;
+    script)
+        docker run \
+               -a stdin -a stdout -a stderr -i \
+               --rm \
+               --entrypoint="" \
+               -v "$(pwd)":/lua-resty-jwt -w /lua-resty-jwt \
+               --name lua-resty-jwt-tests \
+               skylothar/openresty-testsuite:latest \
+               /bin/sh -c 'luarocks make lua-resty-jwt-dev-0.rockspec && prove -r t'
+        ;;
+esac

@@ -1966,11 +1966,11 @@ GET /t
             local tval = validators.opt_contains_any_of({ "roleFoo", "roleBar" }, "roles")
             local obj1 = {
               header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", baz="boo", num=42, roles=[ "roleFoo", "roleBaz" ] }
+              payload = { foo="bar", baz="boo", num=42, roles={ "roleFoo", "roleBaz" } }
             }
             local obj2 = {
               header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBar", "roleBaz" ] }
+              payload = { foo="bar", baz="boo", num=42, roles={ "roleBar", "roleBaz" } }
             }
             local obj3 = {
               header = { type="JWT", alg="HS256" },
@@ -1978,7 +1978,7 @@ GET /t
             }
             local obj4 = {
               header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBoo", "roleBaz" ] }
+              payload = { foo="bar", baz="boo", num=42, roles={ "roleBoo", "roleBaz" } }
             }
             __testValidator(tval, "roles", obj1)
             __testValidator(tval, "roles", obj2)
@@ -1991,7 +1991,7 @@ GET /t
 --- response_body
 true
 true
-Cannot create validator for non-table roles.
+'roles' is malformed.  Expected to be a table.
 false
 --- no_error_log
 [error]
@@ -2096,11 +2096,11 @@ Cannot create validator for non-string table table-claim.
             local tval = validators.contains_any_of({ "roleFoo", "roleBar" }, "roles")
             local obj1 = {
               header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", baz="boo", num=42, roles=[ "roleFoo", "roleBaz" ] }
+              payload = { foo="bar", baz="boo", num=42, roles={ "roleFoo", "roleBaz" } }
             }
             local obj2 = {
               header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBar", "roleBaz" ] }
+              payload = { foo="bar", baz="boo", num=42, roles={ "roleBar", "roleBaz" } }
             }
             local obj3 = {
               header = { type="JWT", alg="HS256" },
@@ -2108,7 +2108,7 @@ Cannot create validator for non-string table table-claim.
             }
             local obj4 = {
               header = { type="JWT", alg="HS256" },
-              payload = { foo="bar", baz="boo", num=42, roles=[ "roleBaz", "roleBoo" ] }
+              payload = { foo="bar", baz="boo", num=42, roles={ "roleBaz", "roleBoo" } }
             }
             __testValidator(tval, "roles", obj1)
             __testValidator(tval, "roles", obj2)
@@ -2121,7 +2121,7 @@ GET /t
 --- response_body
 true
 true
-Cannot create validator for non-table roles.
+'roles' is malformed.  Expected to be a table.
 false
 --- no_error_log
 [error]
