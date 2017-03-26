@@ -184,11 +184,6 @@ The `enc` argument specifies which hashing algorithm to use for encrypting paylo
 }
 ```
 
-verify
-------
-`syntax: local jwt_obj = jwt:verify(key, jwt_token [, claim_spec [, ...]])`
-
-verify a jwt_token and returns a jwt_obj table
 [Back to TOC](#table-of-contents)
 
 
