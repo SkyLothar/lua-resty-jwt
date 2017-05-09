@@ -274,6 +274,8 @@ function Cert.new(self, payload)
     if not public_key then
         return nil, err
     end
+
+    ffi.gc(public_key, _C.EVP_PKEY_free)
     
     self.public_key = public_key
     return self, nil
