@@ -364,7 +364,7 @@ everything is awesome~ :p
                 return ngx.var.cert
             end
 
-            jwt:set_trusted_certs_file("/lua-resty-jwt/testcerts/root.pem")
+            jwt:set_trusted_certs_file("testcerts/root.pem")
             jwt:set_alg_whitelist({ RS256 = 1 })
             jwt:set_x5u_content_retriever(get_public_key)
 
@@ -403,7 +403,7 @@ bar
                 return ngx.var.cert
             end
 
-            jwt:set_trusted_certs_file("/lua-resty-jwt/testcerts/root.pem")
+            jwt:set_trusted_certs_file("testcerts/root.pem")
             jwt:set_alg_whitelist({ RS256 = 1 })
             jwt:set_x5u_content_retriever(get_public_key)
 
@@ -544,7 +544,7 @@ Wrongly encoded signature
                 return ngx.var.cert
             end
 
-            jwt:set_trusted_certs_file("/lua-resty-jwt/testcerts/root.pem")
+            jwt:set_trusted_certs_file("testcerts/root.pem")
             jwt:set_alg_whitelist({ RS256 = 1 })
             jwt:set_x5u_content_retriever(get_public_key)
 
