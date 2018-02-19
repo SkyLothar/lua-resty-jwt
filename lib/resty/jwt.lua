@@ -5,7 +5,7 @@ local evp = require "resty.evp"
 local hmac = require "resty.hmac"
 local resty_random = require "resty.random"
 
-local _M = {_VERSION="0.1.11"}
+local _M = {_VERSION="0.1.12"}
 local mt = {__index=_M}
 
 local string_match= string.match
@@ -63,6 +63,8 @@ local str_const = {
   A256CBC_HS512 = "A256CBC-HS512",
   DIR = "dir",
   reason = "reason",
+  status = "status",
+  status_directive = "__status",
   verified = "verified",
   number = "number",
   string = "string",
@@ -690,22 +692,31 @@ local function validate_claims(self, jwt_obj, ...)
 
   -- Validate all our specs
   for _, claim_spec in ipairs(claim_specs) do
+    local status = claim_spec[str_const.status_directive]
+    if status == nil then
+      status = ngx.HTTP_UNAUTHORIZED
+    end
     if is_legacy_validation_options(claim_spec) then
       claim_spec = get_claim_spec_from_legacy_options(self, claim_spec)
     end
     for claim, fx in pairs(claim_spec) do
-      if type(fx) ~= str_const.funct then
-        error("Claim spec value must be a function - see jwt-validators.lua for helper functions", 0)
-      end
+      -- If claim is the status directive for this claim_spec, ignore
+      if claim ~= str_const.status_directive then
+        if type(fx) ~= str_const.funct then
+          error("Claim spec value must be a function - see jwt-validators.lua for helper functions", 0)
+        end
 
-      local val = claim == str_const.full_obj and cjson_decode(jwt_json) or jwt_obj.payload[claim]
-      local success, ret = pcall(fx, val, claim, jwt_json)
-      if not success then
-        jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.-:%d-: ", "")
-        return false
-      elseif ret == false then
-        jwt_obj[str_const.reason] = string.format("Claim '%s' ('%s') returned failure", claim, val)
-        return false
+        local val = claim == str_const.full_obj and cjson_decode(jwt_json) or jwt_obj.payload[claim]
+        local success, ret = pcall(fx, val, claim, jwt_json)
+        if not success then
+          jwt_obj[str_const.reason] = ret.reason or string.gsub(ret, "^.-:%d-: ", "")
+          jwt_obj[str_const.status] = status
+          return false
+        elseif ret == false then
+          jwt_obj[str_const.reason] = string.format("Claim '%s' ('%s') returned failure", claim, val)
+          jwt_obj[str_const.status] = status
+          return false
+        end
       end
     end
   end
