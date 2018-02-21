@@ -166,7 +166,7 @@ function RSASigner.new(self, pem_private_key)
     ffi.gc(rsa, _C.RSA_free)
 
     local evp_pkey = _C.EVP_PKEY_new()
-    if not evp_pkey then
+    if evp_pkey == nil then
         return _err()
     end
     ffi.gc(evp_pkey, _C.EVP_PKEY_free)
@@ -187,13 +187,13 @@ function RSASigner.sign(self, message, digest_name)
     local len = ffi.new("size_t[1]", 1024)
 
     local ctx = ctx_new()
-    if not ctx then
+    if ctx == nil then
         return _err()
     end
     ctx_free(ctx)
 
     local md = _C.EVP_get_digestbyname(digest_name)
-    if not md then
+    if md == nil then
         return _err()
     end
 
@@ -238,12 +238,12 @@ end
 -- @returns bool, error_string
 function RSAVerifier.verify(self, message, sig, digest_name)
     local md = _C.EVP_get_digestbyname(digest_name)
-    if not md then
+    if md == nil then
         return _err(false)
     end
 
     local ctx = ctx_new()
-    if not ctx then
+    if ctx == nil then
         return _err(false)
     end
     ctx_free(ctx)
@@ -294,7 +294,7 @@ function Cert.new(self, payload)
         end
         x509 = _C.d2i_X509_bio(bio, nil)
     end
-    if not x509 then
+    if x509 == nil then
         return _err()
     end
     ffi.gc(x509, _C.X509_free)
@@ -328,7 +328,7 @@ end
 -- @returns fingerprint_string
 function Cert.get_fingerprint(self, digest_name)
     local md = _C.EVP_get_digestbyname(digest_name)
-    if not md then
+    if md == nil then
         return _err()
     end
     local buf = ffi.new("unsigned char[?]", 32)
@@ -346,7 +346,7 @@ end
 -- @returns An OpenSSL EVP PKEY object representing the public key
 function Cert.get_public_key(self)
     local evp_pkey = _C.X509_get_pubkey(self.x509)
-    if not evp_pkey then
+    if evp_pkey == nil then
         return _err()
     end
 
@@ -358,7 +358,7 @@ end
 -- @return bool, error_string
 function Cert.verify_trust(self, trusted_cert_file)
     local store = _C.X509_STORE_new()
-    if not store then
+    if store == nil then
         return _err(false)
     end
     ffi.gc(store, _C.X509_STORE_free)
@@ -367,7 +367,7 @@ function Cert.verify_trust(self, trusted_cert_file)
     end
 
     local ctx = _C.X509_STORE_CTX_new()
-    if not store then
+    if store == nil then
         return _err(false)
     end
     ffi.gc(ctx, _C.X509_STORE_CTX_free)
@@ -415,7 +415,7 @@ function PublicKey.new(self, payload)
         end
         pkey = _C.d2i_PUBKEY_bio(bio, nil)
     end
-    if not pkey then
+    if pkey == nil then
         return _err()
     end
     ffi.gc(pkey, _C.EVP_PKEY_free)
