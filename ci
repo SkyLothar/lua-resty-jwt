@@ -8,12 +8,13 @@ case "${1:?}" in
         ;;
     script)
         docker run \
-               -a stdin -a stdout -a stderr -i \
+               -i \
                --rm \
-               --entrypoint="" \
-               -v "$(pwd)":/lua-resty-jwt -w /lua-resty-jwt \
+               --entrypoint=/bin/sh \
+               -v "$(pwd)":/lua-resty-jwt \
+               -w /lua-resty-jwt \
                --name lua-resty-jwt-tests \
                skylothar/openresty-testsuite:latest \
-               /bin/sh -c 'luarocks make lua-resty-jwt-dev-0.rockspec && prove -r t'
+               -c 'luarocks make lua-resty-jwt-dev-0.rockspec && prove -r t'
         ;;
 esac
