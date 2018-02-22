@@ -118,11 +118,18 @@ int X509_digest(const X509 *data,const EVP_MD *type,
 
 
 local function _err(ret)
+    -- The openssl error queue can have multiple items, print them all separated by ': '
+    local errs = {}
     local code = _C.ERR_get_error()
-    if code == 0 then
+    while code ~= 0 do
+        table.insert(errs, 1, ffi.string(_C.ERR_reason_error_string(code)))
+        code = _C.ERR_get_error()
+    end
+
+    if #errs == 0 then
         return ret, "Zero error code (null arguments?)"
     end
-    return ret, ffi.string(_C.ERR_reason_error_string(code))
+    return ret, table.concat(errs, ": ")
 end
 
 local ctx_new, ctx_free
@@ -163,6 +170,9 @@ function RSASigner.new(self, pem_private_key)
 
     -- TODO might want to support password protected private keys...
     local rsa = _C.PEM_read_bio_RSAPrivateKey(bio, nil, nil, nil)
+    if rsa == nil then
+        return _err()
+    end
     ffi.gc(rsa, _C.RSA_free)
 
     local evp_pkey = _C.EVP_PKEY_new()
