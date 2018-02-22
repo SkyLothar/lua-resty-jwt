@@ -102,7 +102,7 @@ local function is_nil_or_boolean(arg_value)
     return true
 end
 
---@function get the row part
+--@function get the raw part
 --@param part_name
 --@param jwt_obj
 local function get_raw_part(part_name, jwt_obj)
@@ -485,7 +485,7 @@ function _M.sign(self, secret_key, jwt_obj)
   -- header alg check
   local raw_header = get_raw_part(str_const.header, jwt_obj)
   local raw_payload = get_raw_part(str_const.payload, jwt_obj)
-  local message = string_format(str_const.regex_join_msg, raw_header , raw_payload)
+  local message = string_format(str_const.regex_join_msg, raw_header, raw_payload)
 
   local alg = jwt_obj[str_const.header][str_const.alg]
   local signature = ""
