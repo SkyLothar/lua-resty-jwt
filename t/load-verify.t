@@ -569,3 +569,42 @@ false
 Verification failed
 --- no_error_log
 [error]
+
+
+=== TEST 20: invalid public key is not constructed
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+R0FSQkFHRQo=
+-----END PUBLIC KEY-----
+]]
+            jwt:set_alg_whitelist({ RS256 = 1 })
+            local jwt_token = "eyJ0eXAiOiAiSldUIiwgImFsZyI6ICJSUzI1NiJ9."
+              .. "eyJpc3MiOiAidGVzdCIsICJpYXQiOiAxNDYxOTE0MDE3fQ."
+              .. "dng6Vc-p_ISwiWc61ifWahbFYKBNWfaIr-W3bTPpgL-awG8"
+              .. "UlaCONkQk2PHJw_xndbpenQYl_-hipCKynokeFBTXVcSL6H"
+              .. "7XL4D9laQVDVFnI63hcXOMQxgICsQPVdcfVSBl2jHyV8kuw"
+              .. "XpUHbXQTxMawlE9SkI1-7UukxL9OyFIkT1D1uW7P96irVDs"
+              .. "GkEdTLVUPJerH-jlW4rRbW9twSHsgzHgkaqnQ41giW_e2Zz"
+              .. "r0U2euFH-AxlyvWBJd8Y7rQ_aD40USKsJilZ5qSykGZ7KHd"
+              .. "PzuwTXioCwB8bGVE2YoL-DKYj7-tOwoNsMK7UJzyjqzHqwuqvZWtbhmeRlww"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+Decode secret is not a valid cert/public key: ASN1 lib: nested asn1 error: bad object header: too long
+test
+--- no_error_log
+[error]
