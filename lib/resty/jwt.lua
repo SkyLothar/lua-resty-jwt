@@ -199,7 +199,7 @@ local function derive_keys(enc, secret_key)
   end
 
   if #secret_key ~= secret_key_len then
-    error({reason="The pre-shared content key must be ".. secret_key_len})
+    error({reason="invalid pre-shared key"})
   end
 
   local mac_key = string_sub(secret_key, 1, mac_key_len)
@@ -224,7 +224,7 @@ local function parse_jwe(preshared_key, encoded_header, encoded_encrypted_key, e
   if not preshared_key then
     local encrypted_key = _M:jwt_decode(encoded_encrypted_key)
     if header.alg == str_const.DIR then
-      error({reason="preshared key must not ne null"})
+      error({reason="preshared key must not be null"})
     else  -- implement algorithm to decrypt the key
       error({reason="invalid algorithm: " .. header.alg})
     end
@@ -779,7 +779,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
         cert, err = evp.PublicKey:new(secret)
       end
       if not cert then
-        jwt_obj[str_const.reason] = "Decode secret is not a valid cert/public key: " .. (err and err or secret)
+        jwt_obj[str_const.reason] = "Decode secret is not a valid cert/public key"
         return jwt_obj
       end
     else
