@@ -88,8 +88,15 @@ typedef struct env_md_ctx_st EVP_MD_CTX;
 typedef struct env_md_st EVP_MD;
 typedef struct evp_pkey_ctx_st EVP_PKEY_CTX;
 const EVP_MD *EVP_get_digestbyname(const char *name);
+
+//OpenSSL 1.0
 EVP_MD_CTX *EVP_MD_CTX_create(void);
 void    EVP_MD_CTX_destroy(EVP_MD_CTX *ctx);
+
+//OpenSSL 1.1
+EVP_MD_CTX *EVP_MD_CTX_new(void);
+void    EVP_MD_CTX_free(EVP_MD_CTX *ctx);
+
 int     EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl);
 int     EVP_DigestSignInit(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
                         const EVP_MD *type, ENGINE *e, EVP_PKEY *pkey);
@@ -116,6 +123,28 @@ local function _err(ret)
         return ret, "Zero error code (null arguments?)"
     end
     return ret, ffi.string(_C.ERR_reason_error_string(code))
+end
+
+local ctx_new, ctx_free
+local openssl11, e = pcall(function ()
+    local ctx = _C.HMAC_CTX_new()
+    _C.HMAC_CTX_free(ctx)
+end)
+if openssl11 then
+    ctx_new = function ()
+        return _C.HMAC_CTX_new()
+    end
+    ctx_free = function (ctx)
+        ffi.gc(ctx, _C.EVP_MD_CTX_free)
+    end
+else
+    ctx_new = function ()
+        local ctx = _C.EVP_MD_CTX_create()
+        return ctx
+    end
+    ctx_free = function (ctx)
+        ffi.gc(ctx, _C.EVP_MD_CTX_destroy)
+    end
 end
 
 
@@ -157,11 +186,11 @@ function RSASigner.sign(self, message, digest_name)
     local buf = ffi.new("unsigned char[?]", 1024)
     local len = ffi.new("size_t[1]", 1024)
 
-    local ctx = _C.EVP_MD_CTX_create()
+    local ctx = ctx_new()
     if not ctx then
         return _err()
     end
-    ffi.gc(ctx, _C.EVP_MD_CTX_destroy)
+    ctx_free(ctx)
 
     local md = _C.EVP_get_digestbyname(digest_name)
     if not md then
@@ -213,11 +242,11 @@ function RSAVerifier.verify(self, message, sig, digest_name)
         return _err(false)
     end
 
-    local ctx = _C.EVP_MD_CTX_create()
+    local ctx = ctx_new()
     if not ctx then
         return _err(false)
     end
-    ffi.gc(ctx, _C.EVP_MD_CTX_destroy)
+    ctx_free(ctx)
 
     if _C.EVP_DigestInit_ex(ctx, md, nil) ~= 1 then
         return _err(false)
@@ -276,7 +305,7 @@ function Cert.new(self, payload)
     end
 
     ffi.gc(public_key, _C.EVP_PKEY_free)
-    
+
     self.public_key = public_key
     return self, nil
 end
@@ -366,7 +395,7 @@ _M.PublicKey = PublicKey
 --
 -- ----- BEGIN PUBLIC KEY -----
 --
--- @param payload A PEM or DER format public key file 
+-- @param payload A PEM or DER format public key file
 -- @return PublicKey, error_string
 function PublicKey.new(self, payload)
     if not payload then
@@ -393,6 +422,6 @@ function PublicKey.new(self, payload)
     self.public_key = pkey
     return self, nil
 end
-    
+
 
 return _M
