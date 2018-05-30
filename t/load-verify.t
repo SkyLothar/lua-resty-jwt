@@ -604,7 +604,7 @@ R0FSQkFHRQo=
 GET /t
 --- response_body
 false
-Decode secret is not a valid cert/public key: ASN1 lib: nested asn1 error: bad object header: too long
+Decode secret is not a valid cert/public key
 test
 --- no_error_log
 [error]
