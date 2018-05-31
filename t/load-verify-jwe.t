@@ -39,7 +39,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-{"payload":{"foo":"bar"},"reason":"everything is awesome~ :p","header":{"alg":"dir","enc":"A256CBC-HS512"},"valid":true,"verified":true}
+{"reason":"everything is awesome~ :p","valid":true,"payload":{"foo":"bar"},"header":{"alg":"dir","enc":"A256CBC-HS512"},"verified":true}
 --- no_error_log
 [error]
 
@@ -66,7 +66,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"payload":{"foo":"bar"},"reason":"everything is awesome~ :p","header":{"alg":"dir","enc":"A128CBC-HS256"},"valid":true,"verified":true}
+{"reason":"everything is awesome~ :p","valid":true,"payload":{"foo":"bar"},"header":{"alg":"dir","enc":"A128CBC-HS256"},"verified":true}
 --- no_error_log
 [error]
 
