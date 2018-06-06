@@ -14,7 +14,7 @@ case "${1:?}" in
                -v "$(pwd)":/lua-resty-jwt \
                -w /lua-resty-jwt \
                --name lua-resty-jwt-tests \
-               skylothar/openresty-testsuite:latest \
+               cdbattags/openresty-testsuite:latest \
                -c 'luarocks make lua-resty-jwt-dev-0.rockspec && prove -r t'
         ;;
 esac
