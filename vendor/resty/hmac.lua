@@ -1,3 +1,4 @@
+-- mirror of https://github.com/jkeys089/lua-resty-hmac
 
 local str_util = require "resty.string"
 local to_hex = str_util.to_hex
@@ -11,7 +12,7 @@ local setmetatable = setmetatable
 local error = error
 
 
-local _M = { _VERSION = '0.01' }
+local _M = { _VERSION = '0.02' }
 
 local mt = { __index = _M }
 
@@ -108,7 +109,7 @@ else
         C.HMAC_CTX_init(ctx)
         return ctx
     end
-    ctx_free = function (ctx) 
+    ctx_free = function (ctx)
         C.HMAC_CTX_cleanup(ctx)
     end
 end
