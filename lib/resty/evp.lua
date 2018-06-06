@@ -3,7 +3,8 @@
 
 local ffi = require "ffi"
 local _C = ffi.C
-local _M = { _VERSION = "0.0.2" }
+local _M = { _VERSION = "0.2.0" }
+local ngx = ngx
 
 
 local CONST = {
@@ -134,12 +135,15 @@ end
 
 local ctx_new, ctx_free
 local openssl11, e = pcall(function ()
-    local ctx = _C.HMAC_CTX_new()
-    _C.HMAC_CTX_free(ctx)
+    local ctx = _C.EVP_MD_CTX_new()
+    _C.EVP_MD_CTX_free(ctx)
 end)
+
+ngx.log(ngx.DEBUG, "openssl11=", openssl11, " err=", e)
+
 if openssl11 then
     ctx_new = function ()
-        return _C.HMAC_CTX_new()
+        return _C.EVP_MD_CTX_new()
     end
     ctx_free = function (ctx)
         ffi.gc(ctx, _C.EVP_MD_CTX_free)
