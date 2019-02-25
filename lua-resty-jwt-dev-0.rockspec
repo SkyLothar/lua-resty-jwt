@@ -1,4 +1,4 @@
-package = 'lua-resty-jwt'
+package = 'lua-resty-jwt-48606'
 version = 'dev-0'
 source = {
   url = 'file://.'
@@ -9,9 +9,10 @@ description = {
     This library requires an nginx build 
     with OpenSSL, the ngx_lua module, 
     the LuaJIT 2.0, the lua-resty-hmac, 
-    and the lua-resty-string,
+    and the lua-resty-string, and replace
+    hmac with 48606
   ]],
-  homepage = 'https://github.com/SkyLothar/lua-resty-jwt',
+  homepage = 'https://github.com/shimohq/lua-resty-jwt',
   license = 'Apache License Version 2'
 }
 dependencies = {

@@ -1,5 +1,9 @@
-Name
+Lua-resty-jwt-48606
 ====
+
+This project is forked from [Lua-resty-jwt](https://github.com/SkyLothar/lua-resty-jwt).
+
+According to the [issue](https://github.com/SkyLothar/lua-resty-jwt/issues/81#issuecomment-396151672), replace the hmac.lua(sum 54340) can work well in openssl 1.0 version.
 
 lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01.html) for ngx_lua and LuaJIT
 
