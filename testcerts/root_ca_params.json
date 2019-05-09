@@ -1,0 +1,17 @@
+{
+    "CN": "openresty-jwt-test-cert",
+    "key": {
+      "algo": "rsa",
+      "size": 2048
+    },
+    "names": [{
+      "C": "US",
+      "ST": "New York",
+      "L": "New York",
+      "O": "JWT",
+      "OU": "WORLDWIDE"
+    }],
+    "ca": {
+      "expiry": "876000h"
+    }
+  }

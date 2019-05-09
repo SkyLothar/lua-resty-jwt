@@ -168,3 +168,248 @@ valid: true
 verified: true
 --- no_error_log
 [error]
+
+=== TEST 5: Use rsa oeap 256 for encryption
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local cjson = require "cjson"
+
+            local function get_testcert(name)
+                local f = io.open("/lua-resty-jwt/testcerts/" .. name)
+                local contents = f:read("*all")
+                f:close()
+                return contents
+            end
+
+            local table_of_jwt = {
+              header = { 
+                  alg = "RSA-OAEP-256",
+                  enc = "A256CBC-HS512",
+                  typ = "JWE",
+                  kid = "myKey"
+              },
+              payload = { 
+                  foo = "bar" 
+              }
+             }
+
+            local jwt_token = jwt:sign(get_testcert("cert-pubkey.pem"), table_of_jwt)
+            local jwt_obj = jwt:verify(get_testcert("cert-key.pem"), jwt_token)
+            print(cjson.encode(jwt_obj))
+            ngx.say(
+                cjson.encode(table_of_jwt.payload) == cjson.encode(jwt_obj.payload), "\\n",
+                "valid: ", jwt_obj.valid, "\\n",
+                "verified: ", jwt_obj.verified
+            )
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+valid: true
+verified: true
+--- no_error_log
+[error]
+
+=== TEST 6: Use rsa oeap 256 for encryption invalid typ
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local cjson = require "cjson"
+
+            local function get_testcert(name)
+                local f = io.open("/lua-resty-jwt/testcerts/" .. name)
+                local contents = f:read("*all")
+                f:close()
+                return contents
+            end
+
+            local table_of_jwt = {
+              header = { 
+                  alg = "RSA-OAEP-256",
+                  enc = "A256CBC-HS512",
+                  typ = "INVALID",
+                  kid = "myKey"
+              },
+              payload = { 
+                  foo = "bar" 
+              }
+             }
+
+            local _, err =  jwt:sign(get_testcert("cert-pubkey.pem"), table_of_jwt )
+
+            if err then
+                ngx.say(err)
+            end
+        ';
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+invalid typ: INVALID
+[error]
+
+=== TEST 6: Use rsa oeap 256 for encryption invalid key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local cjson = require "cjson"
+
+            local function get_testcert(name)
+                local f = io.open("/lua-resty-jwt/testcerts/" .. name)
+                local contents = f:read("*all")
+                f:close()
+                return contents
+            end
+
+            local table_of_jwt = {
+              header = { 
+                  alg = "RSA-OAEP-256",
+                  enc = "A256CBC-HS512",
+                  typ = "JWE",
+                  kid = "myKey"
+              },
+              payload = { 
+                  foo = "bar" 
+              }
+             }
+
+            local _, err =  jwt:sign("invalid RSA", table_of_jwt )
+
+            if err then
+                ngx.say(err)
+            end
+        ';
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+Decode secret is not a valid cert/public key: invalid RSA
+[error]
+
+=== TEST 7: Use rsa oeap 256 for encryption invalid enc algo
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+            local cjson = require "cjson"
+
+            local function get_testcert(name)
+                local f = io.open("/lua-resty-jwt/testcerts/" .. name)
+                local contents = f:read("*all")
+                f:close()
+                return contents
+            end
+
+            local table_of_jwt = {
+              header = { 
+                  alg = "RSA-OAEP-256",
+                  enc = "A256CBC",
+                  typ = "JWE",
+                  kid = "myKey"
+              },
+              payload = { 
+                  foo = "bar" 
+              }
+             }
+
+            local jwt, err =  jwt:sign(get_testcert("cert-pubkey.pem"), table_of_jwt )
+
+            if err then
+                ngx.say(err)
+            else
+                ngx.say(jwt)
+            end
+        ';
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+unsupported payload encryption algorithm :A256CBC
+[error]
+
+=== TEST 8: Use rsa oeap 256 for encryption with custom payload encoder/decoder
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt_module = require "resty.jwt"
+            local cjson = require "cjson"
+
+            local function split_string(str, delim)
+                local result = {}
+                local sep = string.format("([^%s]+)", delim)
+                for m in str:gmatch(sep) do
+                    result[#result+1]=m
+                end
+                return result
+            end
+
+            local jwt = jwt_module.new()
+
+            jwt:set_payload_encoder(function(tab) 
+                                        local str = ""
+                                        for i, v in ipairs(tab) do
+                                            if (i ~= 1) then
+                                                str = str .. ":"
+                                            end
+                                            str = str .. ":" .. v
+                                         end
+                                         return str
+                                     end
+                                    )
+
+            jwt:set_payload_decoder(function(str) 
+                                         return split_string(str, ":")
+                                     end
+                                    )
+
+            local function get_testcert(name)
+                local f = io.open("/lua-resty-jwt/testcerts/" .. name)
+                local contents = f:read("*all")
+                f:close()
+                return contents
+            end
+
+            local table_of_jwt = {
+              header = { 
+                  alg = "RSA-OAEP-256",
+                  enc = "A256CBC-HS512",
+                  typ = "JWE",
+                  kid = "myKey"
+              },
+              payload = { 
+                  "foo" , "bar"
+              }
+             }
+
+            local jwt_token = jwt:sign(get_testcert("cert-pubkey.pem"), table_of_jwt)
+            local jwt_obj = jwt:verify(get_testcert("cert-key.pem"), jwt_token)
+            print(cjson.encode(jwt_obj))
+            ngx.say(
+                cjson.encode(table_of_jwt.payload) == cjson.encode(jwt_obj.payload), "\\n",
+                "valid: ", jwt_obj.valid, "\\n",
+                "verified: ", jwt_obj.verified
+            )
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+valid: true
+verified: true
+--- no_error_log
+[error]
