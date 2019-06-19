@@ -62,8 +62,8 @@ local str_const = {
   RS512 = "RS512",
   A128CBC_HS256 = "A128CBC-HS256",
   A256CBC_HS512 = "A256CBC-HS512",
-  DIR = "dir",
   RSA_OAEP_256 = "RSA-OAEP-256",
+  DIR = "dir",
   reason = "reason",
   verified = "verified",
   number = "number",
@@ -111,7 +111,7 @@ local function get_raw_part(part_name, jwt_obj)
   if raw_part == nil then
     local part = jwt_obj[part_name]
     if part == nil then
-      error({reason = "missing part " .. part_name})
+      error({reason="missing part " .. part_name})
     end
     raw_part = _M:jwt_encode(part)
   end
@@ -192,7 +192,7 @@ local function derive_keys(enc, secret_key)
   elseif enc == str_const.A256CBC_HS512 then
     mac_key_len, enc_key_len = 32, 32
   else
-    error("unsupported payload encryption algorithm :" .. enc)
+    error({reason="unsupported payload encryption algorithm :" .. enc})
   end
 
   local secret_key_len = mac_key_len + enc_key_len
@@ -459,13 +459,13 @@ local function sign_jwe(self, secret_key, jwt_obj)
         error({reason="failed to encrypt key " .. (err or "")})
     end
   else
-    error("unsupported alg: " .. alg)
+    error({reason="unsupported alg: " .. alg})
   end
 
   local payload_to_encrypt = get_payload_encoder(self)(jwt_obj.payload)
   local cipher_text, iv, err = encrypt_payload(enc_key, payload_to_encrypt, enc)
   if err then
-    error("error while encrypting payload. Error: " .. err)
+    error({reason="error while encrypting payload. Error: " .. err})
   end
 
   local encoded_header = _M:jwt_encode(header)
@@ -517,7 +517,7 @@ function _M.sign(self, secret_key, jwt_obj)
   -- Optional header typ check [See http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-25#section-5.1]
   if typ ~= nil then
     if typ ~= str_const.JWT and typ ~= str_const.JWE then
-      error("invalid typ: " .. typ)
+      error({reason="invalid typ: " .. typ})
     end
   end
 
