@@ -14,7 +14,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: Verify A256CBC-HS512 Direct Encryption with a Shared Symmetric Key
 --- http_config eval: $::HttpConfig
 --- config
@@ -43,6 +42,8 @@ GET /t
 --- no_error_log
 [error]
 
+
+
 === TEST 2: Verify A128CBC-HS256 Direct Encryption with a Shared Symmetric Key
 --- http_config eval: $::HttpConfig
 --- config
@@ -69,6 +70,8 @@ GET /t
 {"reason":"everything is awesome~ :p","valid":true,"payload":{"foo":"bar"},"header":{"alg":"dir","enc":"A128CBC-HS256"},"verified":true}
 --- no_error_log
 [error]
+
+
 
 === TEST 3: Dont fail if extra chars added
 --- http_config eval: $::HttpConfig
@@ -100,6 +103,8 @@ valid: true
 verified: false
 --- no_error_log
 [error]
+
+
 
 === TEST 4: Encode A128CBC-HS256 Direct Encryption
 --- http_config eval: $::HttpConfig
@@ -133,6 +138,7 @@ valid: true
 verified: true
 --- no_error_log
 [error]
+
 
 
 === TEST 5: Encode A256CBC-HS512 Direct Encryption
@@ -169,7 +175,9 @@ verified: true
 --- no_error_log
 [error]
 
-=== TEST 5: Use rsa oeap 256 for encryption
+
+
+=== TEST 6: Use rsa oeap 256 for encryption
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -215,7 +223,9 @@ verified: true
 --- no_error_log
 [error]
 
-=== TEST 6: Use rsa oeap 256 for encryption invalid typ
+
+
+=== TEST 7: Use rsa oeap 256 for encryption invalid typ
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -240,23 +250,26 @@ verified: true
               payload = { 
                   foo = "bar" 
               }
-             }
+            }
 
-            local _, err =  jwt:sign(get_testcert("cert-pubkey.pem"), table_of_jwt )
-
-            if err then
-                ngx.say(err)
-            end
+            local success, err = pcall(function () jwt:sign(
+                        get_testcert("cert-pubkey.pem"),
+                        table_of_jwt 
+                ) 
+            end)
+            ngx.say(err.reason)
         ';
     }
 --- request
 GET /t
---- error_code: 500
---- error_log
+--- response_body
 invalid typ: INVALID
+--- no_error_log
 [error]
 
-=== TEST 6: Use rsa oeap 256 for encryption invalid key
+
+
+=== TEST 8: Use rsa oeap 256 for encryption invalid key
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -281,23 +294,26 @@ invalid typ: INVALID
               payload = { 
                   foo = "bar" 
               }
-             }
+            }
 
-            local _, err =  jwt:sign("invalid RSA", table_of_jwt )
-
-            if err then
-                ngx.say(err)
-            end
+            local success, err = pcall(function () jwt:sign(
+                        "invalid RSA",
+                        table_of_jwt 
+                    )
+            end)
+            ngx.say(err.reason)
         ';
     }
 --- request
 GET /t
---- error_code: 500
---- error_log
+--- response_body
 Decode secret is not a valid cert/public key: invalid RSA
+--- no_error_log
 [error]
 
-=== TEST 7: Use rsa oeap 256 for encryption invalid enc algo
+
+
+=== TEST 9: Use rsa oeap 256 for encryption invalid enc algo
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -324,23 +340,24 @@ Decode secret is not a valid cert/public key: invalid RSA
               }
              }
 
-            local jwt, err =  jwt:sign(get_testcert("cert-pubkey.pem"), table_of_jwt )
-
-            if err then
-                ngx.say(err)
-            else
-                ngx.say(jwt)
-            end
+            local success, err = pcall(function () jwt:sign(
+                        get_testcert("cert-pubkey.pem"),
+                        table_of_jwt 
+                    )
+            end)
+            ngx.say(err.reason)
         ';
     }
 --- request
 GET /t
---- error_code: 500
---- error_log
+--- response_body
 unsupported payload encryption algorithm :A256CBC
+--- no_error_log
 [error]
 
-=== TEST 8: Use rsa oeap 256 for encryption with custom payload encoder/decoder
+
+
+=== TEST 10: Use rsa oeap 256 for encryption with custom payload encoder/decoder
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
