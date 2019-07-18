@@ -372,8 +372,10 @@ everything is awesome~ :p
             jwt:set_alg_whitelist({ RS256 = 1 })
             jwt:set_x5u_content_retriever(get_public_key)
 
-            local jwt_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsIng1dSI6Imh0dHBzOi8vZHVtbXkuY29tL2NlcnRzIn0.eyJmb28iOiJiYXIiLCJpYXQiOjE1MTkyODQ4NDZ9.1DoCMZN2qEyyGm8KhHU-XVPkUqM3qQ2pyrTFIg8ZExm1eJX5E7gZFeIOIb6VyqZmadSNDTl2nZY127RClk7volMJnEeX4lMSugf_CFKAo9bLeI-jjYxjimd159uAxCeZu9vS7Z5gEIAAlRLp-IsxLpCx4ZvsR8Od21gPCS5WVHEF_KagQn6-bwbpnDfkguW1yByNPy1Ke8SDuw9l8FABJEa7mkJ6Sjx6qKzB5QoMFXI-xgLE3xQbzO0BLBo7bSpoB-LM1uZaEpXLOS3SNH63PQTq_tWSHhpR7d1ZOJW1lb-SxiWFBNFIDHkMaSBttiDGuc4BqXED-Thq_dhsPZwyiA"
-
+            local jwt_token = "eyJ4NXUiOiJodHRwczpcL1wvdGVzdFwvdXJsIiwiYWxnIjoiUlMyNTYiLCJ0eXAiOiJKV1QifQ."
+                             .."eyJmb28iOiJiYXIiLCJleHAiOjk5OTk5OTk5OTl9."
+                             .."WOPIUGsi6bITvoqdpIlvQa86QLUKKuhs-LDn-7Pn4Q7RB3JJqICZdGLk_jW8rUhA7uUxepPepHoG1xSX19qAt-96Ult91gIuLNXjf58pJXG-iXcmYUKHgZ3jEk5udN90sKeuTvWcn7aNAbMFZMz686J_GRGC4FubKrDgzXfFwlXpN7klSCDxgh73O4GmG8nJPRGPp3Aud5hAxoMRwA3gJ86IbL9fEYk_v9l0Rc0zA7A2dL7vRa17Gm9EDLXQsUU1eiIpZuahRACPnCu9v9UX4z7jSWv5VKmJ2kjACOPwIZ3fpBxnKZ3Z-WVKLVgH-hhCRNFYRsxY0xODNjw-4U0mWw"
+            
             local jwt_obj = jwt:verify(nil, jwt_token)
             ngx.say(jwt_obj["verified"])
             ngx.say(jwt_obj["reason"])
@@ -606,5 +608,55 @@ GET /t
 false
 Decode secret is not a valid cert/public key
 test
+--- no_error_log
+[error]
+
+=== TEST 21: Verify valid RS256 signed jwt containing x5c
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local function get_public_key(url, iss, kid)
+                if iss ~= nil then
+                    error("Unexpected iss has been passed. Duh :(")
+                end
+
+                if kid ~= nil then
+                    error("Unexpected kid has been passed. Duh :(")
+                end
+
+                local f = io.open("/lua-resty-jwt/testcerts/cert.pem", "rb");
+                local cert = f:read("*all");
+                print(cert)
+                f:close()
+                return cert
+            end
+
+            jwt:set_trusted_certs_file("/lua-resty-jwt/testcerts/root.pem")
+            jwt:set_alg_whitelist({ RS256 = 1 })
+            jwt:set_x5u_content_retriever(get_public_key)
+
+             local jwt_token = "eyJ4NWMiOlsiTUlJRVB6Q0NBeWVnQXdJQkFnSVVmNlREQ0xWK25tT1ZOTnBUc2NicjBrVEQwdnd3RFFZSktvWklodmNOQVFFTEJRQXdkekVMTUFrR0ExVUVCaE1DVlZNeEVUQVBCZ05WQkFnVENFNWxkeUJaYjNKck1SRXdEd1lEVlFRSEV3aE9aWGNnV1c5eWF6RU1NQW9HQTFVRUNoTURTbGRVTVJJd0VBWURWUVFMRXdsWFQxSk1SRmRKUkVVeElEQWVCZ05WQkFNVEYyOXdaVzV5WlhOMGVTMXFkM1F0ZEdWemRDMWpaWEowTUI0WERURTVNRFF3TlRJek1EZ3dNRm9YRFRJ"
+             .. "d01EUXdOREl6TURnd01Gb3dlakVMTUFrR0ExVUVCaE1DVlZNeEV6QVJCZ05WQkFnVENsZGhjMmhwYm1kMGIyNHhFREFPQmdOVkJBY1RCMU5sWVhSMGJHVXhEREFLQmdOVkJBb1RBMHBYVkRFV01CUUdBMVVFQ3hNTlRtOTBJRmR2Y214a2QybGtaVEVlTUJ3R0ExVUVBeE1WZEdWemRHbHVaeTVxZDNRdWQyOXliR1IzYVdSbE1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBcU5CNzRJRFpPRkJ3SEJCK3o4dDR6NDVPMVBOQVpqXC9DSklLT1hKMDVuaVFDb"
+             .. "jBpdUxrNUpHNmY0a2RyRFRjNVJiTHJ0bHRhZ3ZIbnNQR0ZXVjQzZ1RwNVF2WjJYT2FrUFU0MDE4RHQrZndDTm5UOE9zZllhaUdqdEJ2VWhTOE9KekxteXRNYmQ1eGl0Uzd2anVEQlQwb1IzK2o2SlpRVmZ6ekFhS2Q1T0RJN2ltWUJ5ejJRMytPWFBPQkUxdHNhdDhPVU9TeXo3anBLcVwvUkpYK2RnOHFGSnBaUnBhYnJMeDhFQXBDMTFlck11M2Zyc3pGOVJWdXBSczAzeFVaWGxyV0kwT21Md3g3UkJyelVXdDdPOXdzczVucGJFRFUwY1hodHVRVHNmc3dJVWJ6a1NxRU84aTJIRGUxVkFr"
+             .. "Tm5hdGxNdzk4Q2VrZ3k3SVowTzJVcFJlK3dJREFRQUJvNEdcL01JRzhNQTRHQTFVZER3RUJcL3dRRUF3SUZvREFkQmdOVkhTVUVGakFVQmdnckJnRUZCUWNEQVFZSUt3WUJCUVVIQXdJd0RBWURWUjBUQVFIXC9CQUl3QURBZEJnTlZIUTRFRmdRVVNMSllRRUlZQm54R2JoQm9oZGFlMzluZUs3a3dId1lEVlIwakJCZ3dGb0FVcXhTMytBZEVITlBIVHd2b2dUV1NTXC9GaVlBMHdQUVlEVlIwUkJEWXdOSUlWZEdWemRHbHVaeTVxZDNRdWQyOXliR1IzYVdSbGdodHNiMk5oYkM1MFpYTjBh"
+             .. "VzVuTG1wM2RDNTNiM0pzWkhkcFpHVXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBSVMydzlvNFA2bkQ3VCt6ZlM1QVhlQVJXWENDZ1pReFhNbzhHT0JlVjMxS3U0TzcydmRNRmtSRnE3SFpBRFBYak9nWFBySFMrbndpVkxKMnZ5UGRwNU1ZME0wSGoxYmJtSEgxbFZWUXVwb2lIdCs0a3dJZUVjUENOTW54WUpoY1wvbkQrVnVkUFBaenpGQ1l5dFlmZ0R4Sk9STG9lalJzWGRFWStLOUxsNkJ2bDdUSFB2SjZ5UDNHaFd1UmNCXC80RVVSYXpSZWwxNUhTWFIxNXJPdWVrd20xNkZYcTJWMERsb" 
+             .. "kNlK0lFek5ZR2hPTG9FaVowNjBGY2NIa2N1QWp6Zk8yQkp4SGZzRVNSOG1uN1dNRmx4MUxOeVlDRk9NMzZWdlwvUDFnVFwvbzZXN3d4M1FCQzBMN0hvSVRTQ3FBaUVyQmI5bXN3dFVtWTVVb29cL21MRk1kWUpPZms9Il0sImFsZyI6IlJTMjU2IiwidHlwIjoiSldUIn0.eyJmb28iOiJiYXIiLCJleHAiOjk5OTk5OTk5OTl9.I8ctJVjeQdmdEEgGIpulPgZc9bWPd9qxBCHBmz5p_QsgEoKSopNVI2WFralzrQ-J-dGIusQ35hpOl90fXXSBvdxCd_FSvtXfmSi1FpvifDOBYdp1nwoisAVqV8"
+             .. "U5G8TfX5GZqpVeda6KtsqhoPgzib1UVBu9JLmSBl3k4xtmmW6EL1ZUUz_Br0peXjj5LI9mUPgTyZFRb-gaDQ6qtso58gGoA2t0mB0fE6VXNP1MbELdkhqcDHP-ePNLsW-3EeQ5GLu38stXiEQYgCZs8X42EmfDt4FqvrLMDCrIpD8HK7Oqjl0lW4XX8OAXsCw8CBeIfj1TrovVg2iYRu7LZbiF7A"
+            
+            local jwt_obj = jwt:verify(nil, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["foo"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+bar
 --- no_error_log
 [error]

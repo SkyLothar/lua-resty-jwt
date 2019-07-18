@@ -184,10 +184,9 @@ bar
             end
 
             -- x5c wants a base64 encoded der, not pem.. aka, the pem minus the header+footer
-            local pubkey_pem = get_testcert("cert-pubkey.pem") .. "\\n"
-            local pubkey = pubkey_pem:gsub("%-%-%-%-%-.-%-%-%-%-%-\\n", "")
-            pubkey = pubkey:gsub("\\n", "")
-
+            local pubkey_pem = get_testcert("cert.pem") 
+            local ssl = require "ngx.ssl"
+            local der, err = ssl.cert_pem_to_der(pubkey_pem)
             local jwt_token = jwt:sign(
                 get_testcert("cert-key.pem"),
                 {
@@ -195,7 +194,7 @@ bar
                         typ="JWT",
                         alg="RS256",
                         x5c={
-                            pubkey,
+                            ngx.encode_base64(der),
                         } },
                     payload={foo="bar", exp=9999999999}
                 }
