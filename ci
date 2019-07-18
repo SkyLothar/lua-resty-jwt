@@ -4,7 +4,7 @@ set -ev # Ref https://docs.travis-ci.com/user/customizing-the-build/#Implementin
 
 case "${1:?}" in
     before_install)
-        docker pull skylothar/openresty-testsuite:latest
+        docker pull cdbattags/openresty-testsuite:latest
         ;;
     script)
         docker run \
@@ -14,7 +14,7 @@ case "${1:?}" in
                -v "$(pwd)":/lua-resty-jwt \
                -w /lua-resty-jwt \
                --name lua-resty-jwt-tests \
-               vinayakhulawale/openresty-testsuite:latest \
+               cdbattags/openresty-testsuite:latest \
                -c 'luarocks make lua-resty-jwt-dev-0.rockspec && prove -r t'
         ;;
 esac
