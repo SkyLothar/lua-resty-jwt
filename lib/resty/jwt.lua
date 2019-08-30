@@ -380,8 +380,8 @@ _M.alg_whitelist = nil
 --- applied upon the verification of a jwt.
 function _M.get_default_validation_options(self, jwt_obj)
   return {
-    [str_const.require_exp_claim]=jwt_obj.exp ~= nil,
-    [str_const.require_nbf_claim]=jwt_obj.nbf ~= nil
+    [str_const.require_exp_claim]=jwt_obj[str_const.payload].exp ~= nil,
+    [str_const.require_nbf_claim]=jwt_obj[str_const.payload].nbf ~= nil
   }
 end
 
