@@ -3,21 +3,21 @@ Name
 
 lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01.html) for ngx_lua and LuaJIT
 
-[![Build Status](https://img.shields.io/travis/SkyLothar/lua-resty-jwt.svg?style=flat-square)](https://travis-ci.org/SkyLothar/lua-resty-jwt)
+[![Build Status](https://img.shields.io/travis/cdbattags/lua-resty-jwt.svg?style=flat-square)](https://travis-ci.org/cdbattags/lua-resty-jwt)
 
 
 **Attention :exclamation: the hmac lib used here is [lua-resty-hmac](https://github.com/jkeys089/lua-resty-hmac), not the one in luarocks.**
 
 Installation
 ============
-- opm: `opm get SkyLothar/lua-resty-jwt`
+- opm: `opm get cdbattags/lua-resty-jwt`
 - luarocks: `luarocks install lua-resty-jwt`
-- Head to [release page](https://github.com/SkyLothar/lua-resty-jwt/releases) and download `tar.gz`
+- Head to [release page](https://github.com/cdbattags/lua-resty-jwt/releases) and download `tar.gz`
 
 version
 =======
 
-0.1.10
+0.2.0
 
 
 Table of Contents
@@ -173,7 +173,7 @@ sign-jwe
 
 sign a table_of_jwt to a jwt_token.
 
-The `alg` argument specifies which hashing algorithm to use for encrypting key (`dir`).
+The `alg` argument specifies which hashing algorithm to use for encrypting key (`dir`, `RSA-OAEP-256`).
 The `enc` argument specifies which hashing algorithm to use for encrypting payload (`A128CBC-HS256`, `A256CBC-HS512`)
 
 ### sample of table_of_jwt ###
