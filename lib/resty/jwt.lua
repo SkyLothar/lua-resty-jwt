@@ -557,17 +557,30 @@ local function verify_jwe_obj(secret, jwt_obj)
   return jwt_obj
 end
 
+--@function extract certificate chain
+--@param x5c header from jwt token
+--@return concatenated string of certificates
+local function extract_certificate_chain(x5c)
+  local cert_str = ""
+  -- run through the certificate chain starting from behind
+  for i = #x5c, 1, -1
+  do
+    cert_str = cert_str .. ngx_decode_base64(x5c[i])
+  end
+
+  return cert_str
+end
+
 --@function extract certificate
 --@param jwt object
 --@return decoded certificate
 local function extract_certificate(jwt_obj, x5u_content_retriever)
   local x5c = jwt_obj[str_const.header][str_const.x5c]
   if x5c ~= nil and x5c[1] ~= nil then
-    -- TODO Might want to add support for intermediaries that we
-    -- don't have in our trusted chain (items 2... if present)
-    local cert_str = ngx_decode_base64(x5c[1])
-    if not cert_str then
+    local cert_str = extract_certificate_chain(x5c)
+    if cert_str == "" then
       jwt_obj[str_const.reason] = "Malformed x5c header"
+      return nil
     end
 
     return cert_str
