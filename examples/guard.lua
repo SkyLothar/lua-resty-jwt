@@ -12,7 +12,7 @@ if not jwt_obj["verified"] then
     local site = ngx.var.scheme .. "://" .. ngx.var.http_host;
     local args = ngx.req.get_uri_args();
 
-    ngx.status = ngx.status = ngx.HTTP_UNAUTHORIZED
+    ngx.status = ngx.HTTP_UNAUTHORIZED
     ngx.say(jwt_obj.reason);
     ngx.exit(ngx.HTTP_OK)
 
