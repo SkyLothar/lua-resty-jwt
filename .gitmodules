@@ -1,0 +1,3 @@
+[submodule "third-party/lua-resty-hmac"]
+	path = third-party/lua-resty-hmac
+	url = https://github.com/jkeys089/lua-resty-hmac.git

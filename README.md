@@ -1,5 +1,12 @@
-Name
-====
+**DISCLAIMER:**
+ 
+As discussed in https://github.com/SkyLothar/lua-resty-jwt/issues/85, this project is a fork of https://github.com/SkyLothar/lua-resty-jwt by @SkyLothar that has now been adopted by all interested parties including:
+- [zmartzone/lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc)
+  - OpenID Connect Relying Party and OAuth 2.0 Resource Server implementation in Lua for NGINX / OpenResty
+
+---
+
+# Name
 
 lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01.html) for ngx_lua and LuaJIT
 
@@ -8,20 +15,19 @@ lua-resty-jwt - [JWT](http://self-issued.info/docs/draft-jones-json-web-token-01
 
 **Attention :exclamation: the hmac lib used here is [lua-resty-hmac](https://github.com/jkeys089/lua-resty-hmac), not the one in luarocks.**
 
-Installation
-============
+# Installation
+
 - opm: `opm get cdbattags/lua-resty-jwt`
 - luarocks: `luarocks install lua-resty-jwt`
 - Head to [release page](https://github.com/cdbattags/lua-resty-jwt/releases) and download `tar.gz`
 
-version
-=======
-
-0.2.0
+# Version
 
 
-Table of Contents
-=================
+0.2.1
+
+
+# Table of Contents
 
 * [Name](#name)
 * [Status](#status)
@@ -41,13 +47,11 @@ Table of Contents
 * [Authors](AUTHORS.md)
 * [See Also](#see-also)
 
-Status
-======
+# Status
 
 This library is under active development but is considered production ready.
 
-Description
-===========
+# Description
 
 This library requires an nginx build with OpenSSL,
 the [ngx_lua module](http://wiki.nginx.org/HttpLuaModule),
@@ -55,9 +59,7 @@ the [LuaJIT 2.0](http://luajit.org/luajit.html),
 the [lua-resty-hmac](https://github.com/jkeys089/lua-resty-hmac),
 and the [lua-resty-string](https://github.com/openresty/lua-resty-string),
 
-
-Synopsis
-========
+# Synopsis
 
 ```lua
     # nginx.conf:
@@ -98,8 +100,7 @@ Synopsis
 
 [Back to TOC](#table-of-contents)
 
-Methods
-=======
+# Methods
 
 To load this library,
 
@@ -112,9 +113,8 @@ To load this library,
 
 [Back to TOC](#table-of-contents)
 
+## sign
 
-sign
-----
 
 `syntax: local jwt_token = jwt:sign(key, table_of_jwt)`
 
@@ -123,6 +123,7 @@ sign a table_of_jwt to a jwt_token.
 The `alg` argument specifies which hashing algorithm to use (`HS256`, `HS512`, `RS256`).
 
 ### sample of table_of_jwt ###
+
 ```
 {
     "header": {"typ": "JWT", "alg": "HS512"},
@@ -130,8 +131,8 @@ The `alg` argument specifies which hashing algorithm to use (`HS256`, `HS512`, `
 }
 ```
 
-verify
-------
+## verify
+
 `syntax: local jwt_obj = jwt:verify(key, jwt_token [, claim_spec [, ...]])`
 
 verify a jwt_token and returns a jwt_obj table.  `key` can be a pre-shared key (as a string), *or* a function which takes a single parameter (the value of `kid` from the header) and returns either the pre-shared key (as a string) for the `kid` or `nil` if the `kid` lookup failed.  This call will fail if you try to specify a function for `key` and there is no `kid` existing in the header.
@@ -139,20 +140,21 @@ verify a jwt_token and returns a jwt_obj table.  `key` can be a pre-shared key (
 See [Verification](#verification) for details on the format of `claim_spec` parameters.
 
 
-load & verify
--------------
+## load & verify
+
 ```
 syntax: local jwt_obj = jwt:load_jwt(jwt_token)
 syntax: local verified = jwt:verify_jwt_obj(key, jwt_obj [, claim_spec [, ...]])
 ```
 
-
-__verify = load_jwt +  verify_jwt_obj__
+```
+verify = load_jwt +  verify_jwt_obj
+```
 
 load jwt, check for kid, then verify it with the correct key
 
-
 ### sample of jwt_obj ###
+
 ```
 {
     "raw_header": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9",
@@ -166,8 +168,7 @@ load jwt, check for kid, then verify it with the correct key
 }
 ```
 
-sign-jwe
---------
+## sign-jwe
 
 `syntax: local jwt_token = jwt:sign(key, table_of_jwt)`
 
@@ -177,6 +178,7 @@ The `alg` argument specifies which hashing algorithm to use for encrypting key (
 The `enc` argument specifies which hashing algorithm to use for encrypting payload (`A128CBC-HS256`, `A256CBC-HS512`)
 
 ### sample of table_of_jwt ###
+
 ```
 {
     "header": {"typ": "JWE", "alg": "dir", "enc":"A128CBC-HS256"},
@@ -187,8 +189,7 @@ The `enc` argument specifies which hashing algorithm to use for encrypting paylo
 [Back to TOC](#table-of-contents)
 
 
-Verification
-============
+# Verification
 
 Both the `jwt:load` and `jwt:verify_jwt_obj` functions take, as additional parameters, any number of optional `claim_spec` parameters.  A `claim_spec` is simply a lua table of claims and validators.  Each key in the `claim_spec` table corresponds to a matching key in the payload, and the `validator` is a function that will be called to determine if the claims are met.
 
@@ -208,6 +209,7 @@ Multiple `claim_spec` tables can be specified to the `jwt:load` and `jwt:verify_
 
 
 ### sample `claim_spec` ###
+
 ```
 {
     sub = function(val) return string.match("^[a-z]+$", val) end,
@@ -225,8 +227,7 @@ Multiple `claim_spec` tables can be specified to the `jwt:load` and `jwt:verify_
 }
 ```
 
-JWT Validators
---------------
+## JWT Validators
 
 A library of helpful `validator` functions exists at `resty.jwt-validators`.  You can use this library by including:
 ```
@@ -236,72 +237,92 @@ local validators = require "resty.jwt-validators"
 The following functions are currently defined in the validator library.  Those marked with "(opt)" means that the same function exists named `opt_<name>` which takes the same parameters.  The "opt" version of the function will return `true` if the key does not exist in the payload of the jwt_object being verified, while the "non-opt" version of the function will return false if the key does not exist in the payload of the jwt_object being verified.
 
 #### `validators.chain(...)` ####
+
 Returns a validator that chains the given functions together, one after another - as long as they keep passing their checks.
 
 #### `validators.required(chain_function)` ####
+
 Returns a validator that returns `false` if a value doesn't exist.  If the value exists and a `chain_function` is specified, then the value of `chain_function(val, claim, jwt_json)` will be returned, otherwise, `true` will be returned.  This allows for specifying that a value is both required *and* it must match some additional check.
 
 #### `validators.require_one_of(claim_keys)` ####
+
 Returns a validator which errors with a message if *NONE* of the given claim keys exist.  It is expected that this function is used against a full jwt object.  The claim_keys must be a non-empty table of strings.
 
 #### `validators.check(check_val, check_function, name, check_type)` (opt)  ####
+
 Returns a validator that checks if the result of calling the given `check_function` for the tested value and `check_val` returns true.  The value of `check_val` and `check_function` cannot be nil.  The optional `name` is used for error messages and defaults to "check_value".  The optional `check_type` is used to make sure that the check type matches and defaults to `type(check_val)`.  The first parameter passed to check_function will *never* be nil.  If the `check_function` raises an error, that will be appended to the error message.
 
 #### `validators.equals(check_val)` (opt) ####
+
 Returns a validator that checks if a value exactly equals (using `==`) the given check_value. The value of `check_val` cannot be nil.
 
 #### `validators.matches(pattern)` (opt) ####
+
 Returns a validator that checks if a value matches the given pattern (using `string.match`).  The value of `pattern` must be a string.
 
 #### `validators.any_of(check_values, check_function, name, check_type, table_type)` (opt) ####
+
 Returns a validator which calls the given `check_function` for each of the given `check_values` and the tested value.  If any of these calls return `true`, then this function returns `true`.  The value of `check_values` must be a non-empty table with all the same types, and the value of `check_function` must not be `nil`.  The optional `name` is used for error messages and defaults to "check_values".  The optional `check_type` is used to make sure that the check type matches and defaults to `type(check_values[1])` - the table type.
 
 #### `validators.equals_any_of(check_values)` (opt) ####
+
 Returns a validator that checks if a value exactly equals any of the given `check_values`.
 
 #### `validators.matches_any_of(patterns)` (opt) ####
+
 Returns a validator that checks if a value matches any of the given `patterns`.
 
 #### `validators.contains_any_of(check_values,name)` (opt) ####
+
 Returns a validator that checks if a value of expected type `string` exists in any of the given `check_values`.  The value of `check_values`must be a non-empty table with all the same types.  The optional name is used for error messages and defaults to `check_values`.
 
 #### `validators.greater_than(check_val)` (opt) ####
+
 Returns a validator that checks how a value compares (numerically, using `>`) to a given `check_value`.  The value of `check_val` cannot be `nil` and must be a number.
 
 #### `validators.greater_than_or_equal(check_val)` (opt) ####
+
 Returns a validator that checks how a value compares (numerically, using `>=`) to a given `check_value`.  The value of `check_val` cannot be `nil` and must be a number.
 
 #### `validators.less_than(check_val)` (opt) ####
+
 Returns a validator that checks how a value compares (numerically, using `<`) to a given `check_value`.  The value of `check_val` cannot be `nil` and must be a number.
 
 #### `validators.less_than_or_equal(check_val)` (opt) ####
+
 Returns a validator that checks how a value compares (numerically, using `<=`) to a given `check_value`.  The value of `check_val` cannot be `nil` and must be a number.
 
 #### `validators.is_not_before()` (opt) ####
+
 Returns a validator that checks if the current time is not before the tested value within the system's leeway.  This means that:
 ```
 val <= (system_clock() + system_leeway).
 ```
 
 #### `validators.is_not_expired()` (opt) ####
+
 Returns a validator that checks if the current time is not equal to or after the tested value within the system's leeway.  This means that:
 ```
 val > (system_clock() - system_leeway).
 ```
 
 #### `validators.is_at()` (opt) ####
+
 Returns a validator that checks if the current time is the same as the tested value within the system's leeway.  This means that:
 ```
 val >= (system_clock() - system_leeway) and val <= (system_clock() + system_leeway).
 ```
 
 #### `validators.set_system_leeway(leeway)` ####
+
 A function to set the leeway (in seconds) used for `is_not_before` and `is_not_expired`.  The default is to use `0` seconds
 
 #### `validators.set_system_clock(clock)` ####
+
 A function to set the system clock used for `is_not_before` and `is_not_expired`.  The default is to use `ngx.now`
 
 ### sample `claim_spec` using validators ###
+
 ```
 local validators = require "resty.jwt-validators"
 local claim_spec = {
@@ -311,9 +332,7 @@ local claim_spec = {
 }
 ```
 
-
-Legacy/Timeframe options
-------------------------
+## Legacy/Timeframe options
 
 In order to support code which used previous versions of this library, as well as to simplify specifying timeframe-based `claim_specs`, you may use in place of any single `claim_spec` parameter a table of `validation_options`.  The parameter should be expressed as a key/value table. Each key of the table should be picked from the following list.
 
@@ -378,6 +397,7 @@ When using legacy `validation_options`, you *MUST ONLY* specify these options.  
 
 
 ### sample of validation_options usage ###
+
 ```
 local jwt_obj = jwt:verify(key, jwt_token,
     {
@@ -388,18 +408,14 @@ local jwt_obj = jwt:verify(key, jwt_token,
 )
 ```
 
+# Examples
 
-
-Examples
-========
 * [JWT Auth With Query and Cookie](examples/README.md#jwt-auth-using-query-and-cookie)
 * [JWT Auth With KID and Store Your Key in Redis](examples/README.md#jwt-auth-with-kid-and-store-keys-in-redis)
 
 [Back to TOC](#table-of-contents)
 
-
-Installation
-============
+# Installation
 
 Using Luarocks
 ```bash
@@ -426,11 +442,9 @@ and then load the library in Lua:
     local jwt = require "resty.jwt"
 ```
 
-
 [Back to TOC](#table-of-contents)
 
-Testing With Docker
-===================
+# Testing With Docker
 
 ```
 ./ci script
@@ -438,9 +452,8 @@ Testing With Docker
 
 [Back to TOC](#table-of-contents)
 
+# See Also
 
-See Also
-========
 * the ngx_lua module: http://wiki.nginx.org/HttpLuaModule
 
 [Back to TOC](#table-of-contents)

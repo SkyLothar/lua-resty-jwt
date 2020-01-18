@@ -1,4 +1,4 @@
-local _M = {_VERSION="0.2.0"}
+local _M = {_VERSION="0.2.1"}
 
 --[[
   This file defines "validators" to be used in validating a spec.  A "validator" is simply a function with
