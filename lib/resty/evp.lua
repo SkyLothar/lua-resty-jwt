@@ -59,11 +59,19 @@ RSA * PEM_read_bio_RSAPrivateKey(BIO *bp, RSA **rsa, pem_password_cb *cb,
 RSA * PEM_read_bio_RSAPublicKey(BIO *bp, RSA **rsa, pem_password_cb *cb,
                                 void *u);
 
+// EC_KEY
+typedef struct ec_key_st EC_KEY;
+void EC_KEY_free(EC_KEY *key);
+EC_KEY * PEM_read_bio_ECPrivateKey(BIO *bp, EC_KEY **key, pem_password_cb *cb,
+								void *u);
+EC_KEY * PEM_read_bio_ECPublicKey(BIO *bp, EC_KEY **key, pem_password_cb *cb,
+                                void *u);
 // EVP PKEY
 typedef struct evp_pkey_st EVP_PKEY;
 typedef struct engine_st ENGINE;
 EVP_PKEY *EVP_PKEY_new(void);
 int EVP_PKEY_set1_RSA(EVP_PKEY *pkey,RSA *key);
+int EVP_PKEY_set1_EC_KEY(EVP_PKEY *pkey,EC_KEY *key);
 EVP_PKEY *EVP_PKEY_new_mac_key(int type, ENGINE *e,
                                const unsigned char *key, int keylen);
 void EVP_PKEY_free(EVP_PKEY *key);
@@ -198,7 +206,7 @@ else
     end
 end
 
-local function _new_rsa(self, opts)
+local function _new_key(self, opts)
     local bio = _C.BIO_new(_C.BIO_s_mem())
     ffi_gc(bio, _C.BIO_vfree)
     if _C.BIO_puts(bio, opts.pem_private_key) < 0 then
@@ -212,10 +220,16 @@ local function _new_rsa(self, opts)
         ffi_copy(pass, opts.password, plen)
     end
 
-    local rsa = _C.PEM_read_bio_RSAPrivateKey(bio, nil, nil, pass)
-    ffi_gc(rsa, _C.RSA_free)
+    local key = nil
+    if self.algo == "RS256" then
+       key = _C.PEM_read_bio_RSAPrivateKey(bio, nil, nil, pass)
+       ffi_gc(key, _C.RSA_free)
+    elseif self.algo == "ES256" then
+        key = _C.PEM_read_bio_ECPrivateKey(bio, nil, nil, pass)
+        ffi_gc(key, _C.EC_KEY_free)
+    end
 
-    if not rsa then
+    if not key then
         return _err()
     end
 
@@ -225,8 +239,14 @@ local function _new_rsa(self, opts)
     end
 
     ffi_gc(evp_pkey, _C.EVP_PKEY_free)
-    if _C.EVP_PKEY_set1_RSA(evp_pkey, rsa) ~= 1 then
-        return _err()
+    if self.algo == "RS256" then
+        if _C.EVP_PKEY_set1_RSA(evp_pkey, key) ~= 1 then
+           return _err()
+        end
+    elseif self.algo == "ES256" then
+        if _C.EVP_PKEY_set1_EC_KEY(evp_pkey, key) ~= 1 then
+            return _err()
+        end
     end
 
     self.evp_pkey = evp_pkey
@@ -275,7 +295,7 @@ local function _create_evp_ctx(self, encrypt)
     return self.ctx
 end
 
-local RSASigner = {}
+local RSASigner = {algo="RS256"}
 _M.RSASigner = RSASigner
 
 --- Create a new RSASigner
@@ -283,7 +303,7 @@ _M.RSASigner = RSASigner
 -- @param password password for the private key (if required)
 -- @returns RSASigner, err_string
 function RSASigner.new(self, pem_private_key, password)
-    return _new_rsa (
+    return _new_key (
         self,
         {
             pem_private_key = pem_private_key,
@@ -330,6 +350,24 @@ function RSASigner.sign(self, message, digest_name)
 end
 
 
+local ECSigner = {algo="ES256"}
+_M.ECSigner = ECSigner
+
+--- Create a new ECSigner
+-- @param pem_private_key A private key string in PEM format
+-- @param password password for the private key (if required)
+-- @returns ECSigner, err_string
+function ECSigner.new(self, pem_private_key, password)
+    return RSASigner.new(self, pem_private_key, password)
+end
+
+--- Sign a message with ECDSA
+-- @param message The message to sign
+-- @param digest_name The digest format to use (e.g., "SHA256")
+-- @returns signature, error_string
+function ECSigner.sign(self, message, digest_name)
+    return RSASigner.sign(self, message, digest_name)
+end
 
 local RSAVerifier = {}
 _M.RSAVerifier = RSAVerifier
@@ -584,7 +622,7 @@ function RSAEncryptor.encrypt(self, payload)
 end
 
 
-local RSADecryptor= {}
+local RSADecryptor= {algo="RS256"}
 _M.RSADecryptor = RSADecryptor
 
 --- Create a new RSADecryptor
@@ -596,7 +634,7 @@ _M.RSADecryptor = RSADecryptor
 function RSADecryptor.new(self, pem_private_key, password, padding, digest_alg)
     self.padding = padding or CONST.RSA_PKCS1_OAEP_PADDING
     self.digest_alg = digest_alg or CONST.SHA256_DIGEST
-    return _new_rsa (
+    return _new_key (
         self,
         {
             pem_private_key = pem_private_key,
