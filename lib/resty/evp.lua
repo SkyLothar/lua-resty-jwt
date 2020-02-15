@@ -221,10 +221,10 @@ local function _new_key(self, opts)
     end
 
     local key = nil
-    if self.algo == "RS256" then
+    if self.algo == "RSA" then
        key = _C.PEM_read_bio_RSAPrivateKey(bio, nil, nil, pass)
        ffi_gc(key, _C.RSA_free)
-    elseif self.algo == "ES256" then
+    elseif self.algo == "ECDSA" then
         key = _C.PEM_read_bio_ECPrivateKey(bio, nil, nil, pass)
         ffi_gc(key, _C.EC_KEY_free)
     end
@@ -239,11 +239,11 @@ local function _new_key(self, opts)
     end
 
     ffi_gc(evp_pkey, _C.EVP_PKEY_free)
-    if self.algo == "RS256" then
+    if self.algo == "RSA" then
         if _C.EVP_PKEY_set1_RSA(evp_pkey, key) ~= 1 then
            return _err()
         end
-    elseif self.algo == "ES256" then
+    elseif self.algo == "ECDSA" then
         if _C.EVP_PKEY_set1_EC_KEY(evp_pkey, key) ~= 1 then
             return _err()
         end
@@ -295,7 +295,7 @@ local function _create_evp_ctx(self, encrypt)
     return self.ctx
 end
 
-local RSASigner = {algo="RS256"}
+local RSASigner = {algo="RSA"}
 _M.RSASigner = RSASigner
 
 --- Create a new RSASigner
@@ -350,7 +350,7 @@ function RSASigner.sign(self, message, digest_name)
 end
 
 
-local ECSigner = {algo="ES256"}
+local ECSigner = {algo="ECDSA"}
 _M.ECSigner = ECSigner
 
 --- Create a new ECSigner
@@ -622,7 +622,7 @@ function RSAEncryptor.encrypt(self, payload)
 end
 
 
-local RSADecryptor= {algo="RS256"}
+local RSADecryptor= {algo="RSA"}
 _M.RSADecryptor = RSADecryptor
 
 --- Create a new RSADecryptor
