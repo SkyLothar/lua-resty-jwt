@@ -234,12 +234,8 @@ local function _new_rsa(self, opts)
 end
 
 local function _create_evp_ctx(self, encrypt)
-
     self.ctx = _C.EVP_PKEY_CTX_new(self.evp_pkey, nil)
-    ffi_gc(self.ctx, _C.EVP_PKEY_CTX_free)
-
-
-    if not self.ctx then
+    if self.ctx == nil then
         return _err()
     end
 
