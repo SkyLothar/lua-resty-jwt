@@ -1,0 +1,15 @@
+{
+    "CN": "testing.jwt.worldwide",
+    "key": {
+      "algo": "ecdsa",
+      "size": 256
+    },
+    "names": [{
+      "C": "US",
+      "ST": "Washington",
+      "L": "Seattle",
+      "O": "JWT",
+      "OU": "Not Worldwide"
+    }],
+    "hosts": ["testing.jwt.worldwide", "local.testing.jwt.worldwide"]
+  }
