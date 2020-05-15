@@ -10,6 +10,9 @@ our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
 _EOC_
 
+log_level('debug');
+
+
 no_long_string();
 
 run_tests();
@@ -658,5 +661,37 @@ GET /t
 true
 everything is awesome~ :p
 bar
+--- no_error_log
+[error]
+
+=== TEST 22: Verify valid ES256 signed jwt using a EC public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEm9ehYHp34sZPfZoxJlotxG/LF02e
+ZPmM51hCYIL1jn50e30i8KqEL6y6wl06z6P4co0uew5CzD7JlOQlLB+Ryg==
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ ES256 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ.U38g80dOEKrGQG08KDRY_XWXvolBAhz6G16QZqgePFQljooqsZXw9sIyH6hXFpsAxQbupQBqgUAw6IwUqbAXzg"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+test
 --- no_error_log
 [error]

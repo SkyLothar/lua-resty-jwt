@@ -5,6 +5,9 @@ local evp = require "resty.evp"
 local hmac = require "resty.hmac"
 local resty_random = require "resty.random"
 
+local ngx = ngx
+
+
 local _M = {_VERSION="0.2.2"}
 
 local mt = {
@@ -60,6 +63,7 @@ local str_const = {
   HS512 = "HS512",
   RS256 = "RS256",
   ES256 = "ES256",
+  ES512 = "ES512",
   RS512 = "RS512",
   A128CBC_HS256 = "A128CBC-HS256",
   A256CBC_HS512 = "A256CBC-HS512",
@@ -529,7 +533,6 @@ function _M.sign(self, secret_key, jwt_obj)
   local raw_header = get_raw_part(str_const.header, jwt_obj)
   local raw_payload = get_raw_part(str_const.payload, jwt_obj)
   local message = string_format(str_const.regex_join_msg, raw_header, raw_payload)
-
   local alg = jwt_obj[str_const.header][str_const.alg]
   local signature = ""
   if alg == str_const.HS256 then
@@ -544,12 +547,25 @@ function _M.sign(self, secret_key, jwt_obj)
       error({reason="signer error: " .. err})
     end
     signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
-  elseif alg == str_const.ES256 then
+  elseif alg == str_const.ES256 or alg == str_const.ES512 then
     local signer, err = evp.ECSigner:new(secret_key)
     if not signer then
       error({reason="signer error: " .. err})
     end
-    signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
+    if alg == str_const.ES256 then
+      -- OpenSSL will generate a DER encoded signature that needs to be converted
+      local der_signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
+      signature, err = signer:get_raw_sig(der_signature)
+      if not signature then
+        error({reason="signature error: " .. err})
+      end
+    elseif alg == str_const.ES512 then
+      local der_signature = signer:sign(message, evp.CONST.SHA512_DIGEST)
+      signature, err = signer:get_raw_sig(der_signature)
+      if not signature then
+        error({reason="signature error: " .. err})
+      end
+    end
   else
     error({reason="unsupported alg: " .. alg})
   end
@@ -803,7 +819,7 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
       -- signature check
       jwt_obj[str_const.reason] = "signature mismatch: " .. jwt_obj[str_const.signature]
     end
-  elseif alg == str_const.RS256 or alg == str_const.RS512 or alg == str_const.ES256 then
+  elseif alg == str_const.RS256 or alg == str_const.RS512 or alg == str_const.ES256 or alg == str_const.ES512 then
     local cert, err
     if self.trusted_certs_file ~= nil then
       local cert_str = extract_certificate(jwt_obj, self.x5u_content_retriever)
@@ -857,10 +873,22 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
     local verified = false
     err = "verify error: reason unknown"
 
-    if alg == str_const.RS256 or alg == str_const.ES256 then
+    if alg == str_const.RS256 then
       verified, err = verifier:verify(message, sig, evp.CONST.SHA256_DIGEST)
+    elseif alg == str_const.ES256 then
+      local der_sig = ""
+      der_sig, err = verifier:get_der_sig(sig)
+      if der_sig then
+        verified, err = verifier:verify(message, der_sig, evp.CONST.SHA256_DIGEST)
+      end
     elseif alg == str_const.RS512 then
       verified, err = verifier:verify(message, sig, evp.CONST.SHA512_DIGEST)
+    elseif alg == str_const.ES512 then
+      local der_sig = ""
+      der_sig, err = verifier:get_der_sig(sig)
+      if der_sig then
+        verified, err = verifier:verify(message, der_sig, evp.CONST.SHA512_DIGEST)
+      end
     end
     if not verified then
       jwt_obj[str_const.reason] = err
