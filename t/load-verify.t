@@ -10,9 +10,6 @@ our $HttpConfig = <<'_EOC_';
     lua_package_path 'lib/?.lua;;';
 _EOC_
 
-log_level('debug');
-
-
 no_long_string();
 
 run_tests();
