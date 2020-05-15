@@ -692,3 +692,69 @@ everything is awesome~ :p
 test
 --- no_error_log
 [error]
+
+=== TEST 23: Verify valid ES512 signed jwt using a EC public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAzE6rnNYfoYsMYUsnxzVLBibikcwI
+Aq5VF6sC4BPp7t7rZS9TX7++qA8x5Ei7qymKkDFA7FGUA7E2d2RL4/hpkSYAATT6
+qxZbOj7Qt45Z8AniV91dgv5lDjka+5x4BrL69Ei0V4cRltmx5DSCECgEZZ//BBIu
+Eag64WAkW49U6jtXBUU=
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ ES512 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzUxMiJ9.eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ.AP-jED-M8AYCmiDxQ4ZwMQgsd4gH7BMvscgdM8RgJQsjFFsIOkdsUenvBxSQR7YOdEp4k3YpZjoxhDzN41mdSKWiAGFcvBU2_yFdjp39PUAbTBI8gl_ORzctr-IpkR8NUo5ZhF6-ggqKLox1QQ-7_8iYiLpyxde51PDZBjq9EAuqU9Ci"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+test
+--- no_error_log
+[error]
+
+=== TEST 24: Fail to verify ES512 signed using a EC public key wrong pubkey
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEm9ehYHp34sZPfZoxJlotxG/LF02e
+ZPmM51hCYIL1jn50e30i8KqEL6y6wl06z6P4co0uew5CzD7JlOQlLB+Ryg==
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ ES512 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzUxMiJ9.eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ.AP-jED-M8AYCmiDxQ4ZwMQgsd4gH7BMvscgdM8RgJQsjFFsIOkdsUenvBxSQR7YOdEp4k3YpZjoxhDzN41mdSKWiAGFcvBU2_yFdjp39PUAbTBI8gl_ORzctr-IpkR8NUo5ZhF6-ggqKLox1QQ-7_8iYiLpyxde51PDZBjq9EAuqU9Ci"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+signature length != 2 * order length
+test
+--- no_error_log
+[error]
