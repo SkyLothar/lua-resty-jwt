@@ -97,11 +97,8 @@ long len);
 void           ECDSA_SIG_free(ECDSA_SIG *sig);
 
 typedef struct ecgroup_st EC_GROUP;
-typedef struct eckey_st EC_KEY;
 
-void EC_GROUP_free(EC_GROUP *group);
 EC_GROUP *EC_KEY_get0_group(const EC_KEY *key);
-void EC_KEY_free(EC_KEY *key);
 EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
 int EC_GROUP_get_order(const EC_GROUP *group, BIGNUM *order, void *ctx);
 
