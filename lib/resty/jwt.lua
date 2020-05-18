@@ -549,19 +549,17 @@ function _M.sign(self, secret_key, jwt_obj)
     if not signer then
       error({reason="signer error: " .. err})
     end
+    -- OpenSSL will generate a DER encoded signature that needs to be converted
+    local der_signature = ""
     if alg == str_const.ES256 then
-      -- OpenSSL will generate a DER encoded signature that needs to be converted
-      local der_signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
-      signature, err = signer:get_raw_sig(der_signature)
-      if not signature then
-        error({reason="signature error: " .. err})
-      end
+      der_signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
     elseif alg == str_const.ES512 then
-      local der_signature = signer:sign(message, evp.CONST.SHA512_DIGEST)
-      signature, err = signer:get_raw_sig(der_signature)
-      if not signature then
-        error({reason="signature error: " .. err})
-      end
+      der_signature = signer:sign(message, evp.CONST.SHA512_DIGEST)
+    end
+    -- Perform DER to RAW signature conversion
+    signature, err = signer:get_raw_sig(der_signature)
+    if not signature then
+      error({reason="signature error: " .. err})
     end
   else
     error({reason="unsupported alg: " .. alg})
