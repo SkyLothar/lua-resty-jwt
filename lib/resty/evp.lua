@@ -515,10 +515,9 @@ function RSAVerifier.get_der_sig(self, signature)
     local ecdsa = _C.ECDSA_SIG_new()
     ffi_gc(ecdsa, _C.ECDSA_SIG_free)
 
+    -- Those do not need to be GCed as they are cleared by the ECDSA_SIG_free()
     local r = _C.BN_bin2bn(sig_bytes, order_size_bytes, nil)
     local s = _C.BN_bin2bn(sig_bytes + order_size_bytes, order_size_bytes, nil)
-    ffi_gc(r, _C.BN_free)
-    ffi_gc(s, _C.BN_free)
 
     ecdsa.r = r
     ecdsa.s = s
