@@ -848,7 +848,12 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
       jwt_obj[str_const.reason] = "No trusted certs loaded"
       return jwt_obj
     end
-    local verifier = evp.RSAVerifier:new(cert)
+    local verifier = ''
+    if alg == str_const.RS256 or alg == str_const.RS512 then
+      verifier = evp.RSAVerifier:new(cert)
+    elseif alg == str_const.ES256 or alg == str_const.ES512 then
+      verifier = evp.ECVerifier:new(cert)
+    end
     if not verifier then
       -- Internal error case, should not happen...
       jwt_obj[str_const.reason] = "Failed to build verifier " .. err
@@ -870,22 +875,10 @@ function _M.verify_jwt_obj(self, secret, jwt_obj, ...)
     local verified = false
     err = "verify error: reason unknown"
 
-    if alg == str_const.RS256 then
+    if alg == str_const.RS256 or alg == str_const.ES256 then
       verified, err = verifier:verify(message, sig, evp.CONST.SHA256_DIGEST)
-    elseif alg == str_const.ES256 then
-      local der_sig = ""
-      der_sig, err = verifier:get_der_sig(sig)
-      if der_sig then
-        verified, err = verifier:verify(message, der_sig, evp.CONST.SHA256_DIGEST)
-      end
-    elseif alg == str_const.RS512 then
+    elseif alg == str_const.RS512 or alg == str_const.ES512 then
       verified, err = verifier:verify(message, sig, evp.CONST.SHA512_DIGEST)
-    elseif alg == str_const.ES512 then
-      local der_sig = ""
-      der_sig, err = verifier:get_der_sig(sig)
-      if der_sig then
-        verified, err = verifier:verify(message, der_sig, evp.CONST.SHA512_DIGEST)
-      end
     end
     if not verified then
       jwt_obj[str_const.reason] = err

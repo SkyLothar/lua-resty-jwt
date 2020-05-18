@@ -485,11 +485,33 @@ function RSAVerifier.verify(self, message, sig, digest_name)
     end
 end
 
+local ECVerifier = {}
+_M.ECVerifier = ECVerifier
+--- Create a new ECVerifier
+-- @param key_source An instance of Cert or PublicKey used for verification
+-- @returns ECVerifier, error_string
+function ECVerifier.new(self, key_source)
+    return RSAVerifier.new(self, key_source)
+end
+
+--- Verify a message is properly signed
+-- @param message The original message
+-- @param the signature to verify
+-- @param digest_name The digest type that was used to sign
+-- @returns bool, error_string
+function ECVerifier.verify(self, message, sig, digest_name)
+    -- We have to convert the signature back from RAW to ASN1 for verification
+    local der_sig, err = self:get_der_sig(sig)
+    if not der_sig then
+        return nil, err
+    end
+    return RSAVerifier.verify(self, message, der_sig, digest_name)
+end
+
 --- Converts a RAW r,s signature to ASN.1 DER signature (ECDSA)
 -- @param signature The raw signature
 -- @returns signature, error_string
-function RSAVerifier.get_der_sig(self, signature)
-    -- TODO: should be declared in a new class rather than RSAVerifier
+function ECVerifier.get_der_sig(self, signature)
     if not signature then
         return nil, "Must pass a signature to convert"
     end
