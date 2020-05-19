@@ -660,3 +660,147 @@ everything is awesome~ :p
 bar
 --- no_error_log
 [error]
+
+=== TEST 22: Verify valid ES256 signed jwt using a EC public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEm9ehYHp34sZPfZoxJlotxG/LF02e
+ZPmM51hCYIL1jn50e30i8KqEL6y6wl06z6P4co0uew5CzD7JlOQlLB+Ryg==
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ ES256 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ.U38g80dOEKrGQG08KDRY_XWXvolBAhz6G16QZqgePFQljooqsZXw9sIyH6hXFpsAxQbupQBqgUAw6IwUqbAXzg"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+test
+--- no_error_log
+[error]
+
+=== TEST 23: Verify valid ES512 signed jwt using a EC public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MIGbMBAGByqGSM49AgEGBSuBBAAjA4GGAAQAzE6rnNYfoYsMYUsnxzVLBibikcwI
+Aq5VF6sC4BPp7t7rZS9TX7++qA8x5Ei7qymKkDFA7FGUA7E2d2RL4/hpkSYAATT6
+qxZbOj7Qt45Z8AniV91dgv5lDjka+5x4BrL69Ei0V4cRltmx5DSCECgEZZ//BBIu
+Eag64WAkW49U6jtXBUU=
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ ES512 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzUxMiJ9.eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ.AP-jED-M8AYCmiDxQ4ZwMQgsd4gH7BMvscgdM8RgJQsjFFsIOkdsUenvBxSQR7YOdEp4k3YpZjoxhDzN41mdSKWiAGFcvBU2_yFdjp39PUAbTBI8gl_ORzctr-IpkR8NUo5ZhF6-ggqKLox1QQ-7_8iYiLpyxde51PDZBjq9EAuqU9Ci"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+test
+--- no_error_log
+[error]
+
+=== TEST 24: Fail to verify ES512 signed using a EC public key wrong pubkey
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEm9ehYHp34sZPfZoxJlotxG/LF02e
+ZPmM51hCYIL1jn50e30i8KqEL6y6wl06z6P4co0uew5CzD7JlOQlLB+Ryg==
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ ES512 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzUxMiJ9.eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ.AP-jED-M8AYCmiDxQ4ZwMQgsd4gH7BMvscgdM8RgJQsjFFsIOkdsUenvBxSQR7YOdEp4k3YpZjoxhDzN41mdSKWiAGFcvBU2_yFdjp39PUAbTBI8gl_ORzctr-IpkR8NUo5ZhF6-ggqKLox1QQ-7_8iYiLpyxde51PDZBjq9EAuqU9Ci"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+false
+signature length != 2 * order length
+test
+--- no_error_log
+[error]
+
+=== TEST 25: Verify valid RS512 signed jwt using a rsa public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAteNTDG4uTytsOMK/Lhbo
+SVghEVejDISkgzh0KSNN1lZ33GmXNNLqP/thpmOd6u6Hd1P1rQV3lb2Lyqb704zl
+3atYIwhmIL9cDBAVJdsWHmqmmyBbmgMxsthuFGOJ2kWxRyIsTD7uz2XBgCOWYbTU
+g+PcplkzhWcaKcjSYqr1sapQpQQDCLpitocx6vAKfEq1f5HDUiseBZlxEDARjqnu
+sM6JENfBJSoH9rv9i/w0j8bhF1EP0yyew8hY6irsIPHLHDbj2BC+NMEZQuA/ZLix
+hH+rJPRNH/WibFwNMEYNEokLxF8odhUCHCjILWE+pzsnnoqGPA64if4bXNUD66h0
+yQIDAQAB
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ RS512 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9."
+              .. "eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ."
+              .. "YShbEh4rqjAwMYV-AqqR09qqerdjbXBKwx0jD31Pinoiupo_"
+              .. "eg8VLNYDjax5LMR2o2cbTn4wCYxdjQA74ynPT4VnQJydL90"
+              .. "2VMIIIhazQs8GDfN8sqOQcn_kDCjkb5dEYAPEplFjtImGl0"
+              .. "jN1AqiTI5H9Xe4F-G1vdmf_ob-ilMh71oiwYei6mhp29KTZ"
+              .. "47s6Ql43ZL9A6qMcNapl52OEWM0JeYURE7wS7a4ExEyI-F4"
+              .. "uvbRtq0M4bdpQdsrCYayTqf0Cn1aAYobqKx-cIKYRhEa6Kd"
+              .. "xcRPxKncRYbB91emgnvLGulFfL_Aw42e3zH1nDqFGWS35RY"
+              .. "M49O6rayMVAA"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+test
+--- no_error_log
+[error]

@@ -77,6 +77,32 @@ EVP_PKEY *EVP_PKEY_new_mac_key(int type, ENGINE *e,
 void EVP_PKEY_free(EVP_PKEY *key);
 int i2d_RSA(RSA *a, unsigned char **out);
 
+// Additional typedef of ECC operations (DER/RAW sig conversion)
+typedef struct bignum_st BIGNUM;
+BIGNUM *BN_new(void);
+void BN_free(BIGNUM *a);
+int BN_num_bits(const BIGNUM *a);
+int BN_bn2bin(const BIGNUM *a, unsigned char *to);
+BIGNUM *BN_bin2bn(const unsigned char *s, int len, BIGNUM *ret);
+char *BN_bn2hex(const BIGNUM *a);
+
+
+typedef struct ECDSA_SIG_st {
+    BIGNUM *r;
+    BIGNUM *s;} ECDSA_SIG;
+ECDSA_SIG*     ECDSA_SIG_new(void);
+int            i2d_ECDSA_SIG(const ECDSA_SIG *sig, unsigned char **pp);
+ECDSA_SIG*     d2i_ECDSA_SIG(ECDSA_SIG **sig, unsigned char **pp,
+long len);
+void           ECDSA_SIG_free(ECDSA_SIG *sig);
+
+typedef struct ecgroup_st EC_GROUP;
+
+EC_GROUP *EC_KEY_get0_group(const EC_KEY *key);
+EC_KEY *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
+int EC_GROUP_get_order(const EC_GROUP *group, BIGNUM *order, void *ctx);
+
+
 // PUBKEY
 EVP_PKEY *PEM_read_bio_PUBKEY(BIO *bp, EVP_PKEY **x,
                               pem_password_cb *cb, void *u);
@@ -365,6 +391,47 @@ function ECSigner.sign(self, message, digest_name)
     return RSASigner.sign(self, message, digest_name)
 end
 
+--- Converts a ASN.1 DER signature to RAW r,s
+-- @param signature The ASN.1 DER signature
+-- @returns signature, error_string
+function ECSigner.get_raw_sig(self, signature)
+    if not signature then
+        return nil, "Must pass a signature to convert"
+    end
+    local sig_ptr = ffi_new("unsigned char *[1]")
+    local sig_bin = ffi_new("unsigned char [?]", #signature)
+    ffi_copy(sig_bin, signature, #signature)
+
+    sig_ptr[0] = sig_bin
+    local sig = _C.d2i_ECDSA_SIG(nil, sig_ptr, #signature)
+    ffi_gc(sig, _C.ECDSA_SIG_free)
+
+    local rbytes = math.floor((_C.BN_num_bits(sig.r)+7)/8)
+    local sbytes = math.floor((_C.BN_num_bits(sig.s)+7)/8)
+
+    -- Ensure we copy the BN in a padded form
+    local ec = _C.EVP_PKEY_get0_EC_KEY(self.evp_pkey)
+    local ecgroup = _C.EC_KEY_get0_group(ec)
+
+    local order =  _C.BN_new()
+    ffi_gc(order, _C.BN_free)
+
+    -- res is an int, if 0, curve not found
+    local res = _C.EC_GROUP_get_order(ecgroup, order, nil)
+
+    -- BN_num_bytes is a #define, so have to use BN_num_bits
+    local order_size_bytes = math.floor((_C.BN_num_bits(order)+7)/8)
+    local resbuf_len = order_size_bytes *2
+    local resbuf = ffi_new("unsigned char[?]", resbuf_len)
+
+    -- Let's whilst preserving MSB
+    _C.BN_bn2bin(sig.r, resbuf + order_size_bytes - rbytes)
+    _C.BN_bn2bin(sig.s, resbuf + (order_size_bytes*2) - sbytes)
+
+    local raw = ffi_string(resbuf, resbuf_len)
+    return raw, nil
+end
+
 local RSAVerifier = {}
 _M.RSAVerifier = RSAVerifier
 
@@ -416,6 +483,77 @@ function RSAVerifier.verify(self, message, sig, digest_name)
     else
         return false, "Verification failed"
     end
+end
+
+local ECVerifier = {}
+_M.ECVerifier = ECVerifier
+--- Create a new ECVerifier
+-- @param key_source An instance of Cert or PublicKey used for verification
+-- @returns ECVerifier, error_string
+function ECVerifier.new(self, key_source)
+    return RSAVerifier.new(self, key_source)
+end
+
+--- Verify a message is properly signed
+-- @param message The original message
+-- @param the signature to verify
+-- @param digest_name The digest type that was used to sign
+-- @returns bool, error_string
+function ECVerifier.verify(self, message, sig, digest_name)
+    -- We have to convert the signature back from RAW to ASN1 for verification
+    local der_sig, err = self:get_der_sig(sig)
+    if not der_sig then
+        return nil, err
+    end
+    return RSAVerifier.verify(self, message, der_sig, digest_name)
+end
+
+--- Converts a RAW r,s signature to ASN.1 DER signature (ECDSA)
+-- @param signature The raw signature
+-- @returns signature, error_string
+function ECVerifier.get_der_sig(self, signature)
+    if not signature then
+        return nil, "Must pass a signature to convert"
+    end
+    -- inspired from https://bit.ly/2yZxzxJ
+    local ec = _C.EVP_PKEY_get0_EC_KEY(self.evp_pkey)
+    local ecgroup = _C.EC_KEY_get0_group(ec)
+
+    local order =  _C.BN_new()
+    ffi_gc(order, _C.BN_free)
+
+    -- res is an int, if 0, curve not found
+    local res = _C.EC_GROUP_get_order(ecgroup, order, nil)
+
+    -- BN_num_bytes is a #define, so have to use BN_num_bits
+    local order_size_bytes = math.floor((_C.BN_num_bits(order)+7)/8)
+
+    if #signature ~= 2 * order_size_bytes then
+        return nil, "signature length != 2 * order length"
+    end
+
+    local sig_bytes = ffi_new("unsigned char [?]", #signature)
+    ffi_copy(sig_bytes, signature, #signature)
+    local ecdsa = _C.ECDSA_SIG_new()
+    ffi_gc(ecdsa, _C.ECDSA_SIG_free)
+
+    -- Those do not need to be GCed as they are cleared by the ECDSA_SIG_free()
+    local r = _C.BN_bin2bn(sig_bytes, order_size_bytes, nil)
+    local s = _C.BN_bin2bn(sig_bytes + order_size_bytes, order_size_bytes, nil)
+
+    ecdsa.r = r
+    ecdsa.s = s
+
+    -- Gives us the buffer size to allocate
+    local der_len = _C.i2d_ECDSA_SIG(ecdsa, nil)
+
+    local der_sig_ptr = ffi_new("unsigned char *[1]")
+    local der_sig_bin = ffi_new("unsigned char [?]", der_len)
+    der_sig_ptr[0] = der_sig_bin
+    der_len = _C.i2d_ECDSA_SIG(ecdsa, der_sig_ptr)
+
+    local der_str = ffi_string(der_sig_bin, der_len)
+    return der_str, nil
 end
 
 
