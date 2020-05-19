@@ -758,3 +758,49 @@ signature length != 2 * order length
 test
 --- no_error_log
 [error]
+
+=== TEST 25: Verify valid RS512 signed jwt using a rsa public key
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local jwt = require "resty.jwt"
+
+            local public_key = [[
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAteNTDG4uTytsOMK/Lhbo
+SVghEVejDISkgzh0KSNN1lZ33GmXNNLqP/thpmOd6u6Hd1P1rQV3lb2Lyqb704zl
+3atYIwhmIL9cDBAVJdsWHmqmmyBbmgMxsthuFGOJ2kWxRyIsTD7uz2XBgCOWYbTU
+g+PcplkzhWcaKcjSYqr1sapQpQQDCLpitocx6vAKfEq1f5HDUiseBZlxEDARjqnu
+sM6JENfBJSoH9rv9i/w0j8bhF1EP0yyew8hY6irsIPHLHDbj2BC+NMEZQuA/ZLix
+hH+rJPRNH/WibFwNMEYNEokLxF8odhUCHCjILWE+pzsnnoqGPA64if4bXNUD66h0
+yQIDAQAB
+-----END PUBLIC KEY-----
+                ]]
+
+            jwt:set_alg_whitelist({ RS512 = 1 })
+            local jwt_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9."
+              .. "eyJpc3MiOiJ0ZXN0IiwiaWF0IjoxNDYxOTE0MDE3fQ."
+              .. "YShbEh4rqjAwMYV-AqqR09qqerdjbXBKwx0jD31Pinoiupo_"
+              .. "eg8VLNYDjax5LMR2o2cbTn4wCYxdjQA74ynPT4VnQJydL90"
+              .. "2VMIIIhazQs8GDfN8sqOQcn_kDCjkb5dEYAPEplFjtImGl0"
+              .. "jN1AqiTI5H9Xe4F-G1vdmf_ob-ilMh71oiwYei6mhp29KTZ"
+              .. "47s6Ql43ZL9A6qMcNapl52OEWM0JeYURE7wS7a4ExEyI-F4"
+              .. "uvbRtq0M4bdpQdsrCYayTqf0Cn1aAYobqKx-cIKYRhEa6Kd"
+              .. "xcRPxKncRYbB91emgnvLGulFfL_Aw42e3zH1nDqFGWS35RY"
+              .. "M49O6rayMVAA"
+
+            local jwt_obj = jwt:verify(public_key, jwt_token)
+            ngx.say(jwt_obj["verified"])
+            ngx.say(jwt_obj["reason"])
+            ngx.say(jwt_obj["payload"]["iss"])
+        ';
+    }
+--- request
+GET /t
+--- response_body
+true
+everything is awesome~ :p
+test
+--- no_error_log
+[error]
