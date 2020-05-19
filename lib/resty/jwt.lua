@@ -538,12 +538,16 @@ function _M.sign(self, secret_key, jwt_obj)
   elseif alg == str_const.HS512 then
     local secret_str = get_secret_str(secret_key, jwt_obj)
     signature = hmac:new(secret_str, hmac.ALGOS.SHA512):final(message)
-  elseif alg == str_const.RS256 then
+  elseif alg == str_const.RS256 or alg == str_const.RS512 then
     local signer, err = evp.RSASigner:new(secret_key)
     if not signer then
       error({reason="signer error: " .. err})
     end
-    signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
+    if alg == str_const.RS256 then
+      signature = signer:sign(message, evp.CONST.SHA256_DIGEST)
+    elseif alg == str_const.RS512 then
+      signature = signer:sign(message, evp.CONST.SHA512_DIGEST)
+    end
   elseif alg == str_const.ES256 or alg == str_const.ES512 then
     local signer, err = evp.ECSigner:new(secret_key)
     if not signer then
