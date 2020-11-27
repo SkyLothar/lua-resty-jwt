@@ -481,7 +481,7 @@ function RSAVerifier.verify(self, message, sig, digest_name)
     if _C.EVP_DigestVerifyFinal(ctx, sig_bin, #sig) == 1 then
         return true, nil
     else
-        return false, "Verification failed"
+        return false, "Token signature verification failed"
     end
 end
 
