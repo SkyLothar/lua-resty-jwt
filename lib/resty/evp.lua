@@ -3,7 +3,7 @@
 
 local ffi = require "ffi"
 local _C = ffi.C
-local _M = { _VERSION = "0.0.2" }
+local _M = { _VERSION = "0.0.3" }
 
 
 local CONST = {
@@ -103,11 +103,37 @@ int     EVP_DigestVerifyInit(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
 int     EVP_DigestVerifyFinal(EVP_MD_CTX *ctx,
                         unsigned char *sig, size_t siglen);
 
+// openssl11
+EVP_MD_CTX *EVP_MD_CTX_new(void);
+void    EVP_MD_CTX_free(EVP_MD_CTX *ctx);
+
 // Fingerprints
 int X509_digest(const X509 *data,const EVP_MD *type,
                 unsigned char *md, unsigned int *len);
 
 ]]
+
+local evp_md_ctx_new, evp_md_ctx_free
+local openssl11, e = pcall(function ()
+    local ctx = _C.EVP_MD_CTX_new()
+    _C.EVP_MD_CTX_free(ctx)
+end)
+
+if openssl11 then
+    evp_md_ctx_new = function ()
+        return _C.EVP_MD_CTX_new()
+    end
+    evp_md_ctx_free = function (ctx)
+        _C.EVP_MD_CTX_free(ctx)
+    end
+else
+    evp_md_ctx_new = function ()
+        return _C.EVP_MD_CTX_create()
+    end
+    evp_md_ctx_free = function (ctx)
+        _C.EVP_MD_CTX_destroy(ctx)
+    end
+end
 
 
 local function _err(ret)
@@ -157,11 +183,11 @@ function RSASigner.sign(self, message, digest_name)
     local buf = ffi.new("unsigned char[?]", 1024)
     local len = ffi.new("size_t[1]", 1024)
 
-    local ctx = _C.EVP_MD_CTX_create()
+    local ctx = evp_md_ctx_new()
     if not ctx then
         return _err()
     end
-    ffi.gc(ctx, _C.EVP_MD_CTX_destroy)
+    ffi.gc(ctx, evp_md_ctx_free)
 
     local md = _C.EVP_get_digestbyname(digest_name)
     if not md then
@@ -213,11 +239,11 @@ function RSAVerifier.verify(self, message, sig, digest_name)
         return _err(false)
     end
 
-    local ctx = _C.EVP_MD_CTX_create()
+    local ctx = evp_md_ctx_new()
     if not ctx then
         return _err(false)
     end
-    ffi.gc(ctx, _C.EVP_MD_CTX_destroy)
+    ffi.gc(ctx, evp_md_ctx_free)
 
     if _C.EVP_DigestInit_ex(ctx, md, nil) ~= 1 then
         return _err(false)
